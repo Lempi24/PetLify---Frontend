@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const FormInput = ({ type, placeholder, icon }) => {
+const FormInput = ({ type, placeholder, icon, label, error, ...rest }) => {
 	const [isPasswordShown, setIsPasswordShown] = useState(false);
 
 	const togglePasswordVisibility = () => {
@@ -22,6 +22,7 @@ const FormInput = ({ type, placeholder, icon }) => {
 			<input
 				type={inputType}
 				placeholder={placeholder}
+				{...rest}
 				className='text-gray pl-12 pr-3 py-3 rounded-md bg-text border-accent border-2 placeholder:text-gray w-full'
 			/>
 			{type === 'password' && (
