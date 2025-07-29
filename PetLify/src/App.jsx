@@ -1,7 +1,13 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
 function App() {
 	return (
-		<div className='w-screen h-screen overflow-x-hidden'>
-			<h1 class='text-3xl font-bold underline'>Hello world!</h1>
+		<div className='w-screen h-screen overflow-x-hidden bg-main text-text'>
+			<Router>
+				<Routes>
+					<Route path='/' element={<LoginPage />} />
+				</Routes>
+			</Router>
 		</div>
 	);
 }

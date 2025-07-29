@@ -1,51 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
 @import 'tailwindcss';
 
-*,
-*::before,
-*::after {
-	box-sizing: border-box;
-	margin: 0;
-	padding: 0;
+@theme {
+	--color-main: #1e201e;
+	--color-text: #ecdfcc;
+	--color-accent: #b7bdca;
+	--color-cta: #ce7f31;
+	--color-negative: #ea4144;
+	--color-positive: #54de77;
+	--color-gray: #767b86;
 }
 
-html,
-body {
-	height: 100%;
-}
-
-body {
-	line-height: 1.5;
-	-webkit-font-smoothing: antialiased;
-	text-rendering: optimizeSpeed;
-}
-
-img,
-picture,
-video,
-canvas,
-svg {
-	display: block;
-	max-width: 100%;
-}
-
-input,
-button,
-textarea,
-select {
-	font: inherit;
-}
-
-a {
-	text-decoration: none;
-	color: inherit;
-}
-
-ul,
-ol {
-	list-style: none;
-}
-
-table {
-	border-collapse: collapse;
-	border-spacing: 0;
+@layer base {
+	html {
+		font-family: 'Roboto Mono', sans-serif;
+	}
 }
