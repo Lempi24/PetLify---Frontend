@@ -2,7 +2,9 @@ import FormInput from './FormInput';
 import { useEffect, useState } from 'react';
 import dogo from '../img/dogo.png';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 const Form = () => {
+	const navigate = useNavigate();
 	const [isLoging, setIsLoging] = useState(true);
 	const {
 		register,
@@ -22,7 +24,8 @@ const Form = () => {
 	const submitCall = async (data) => {
 		if (isLoging) {
 			//Tutaj będzie logika logowania
-			alert('Logowańsko');
+			navigate('/main-page');
+			// alert('Logowańsko');
 		} else {
 			//Tutaj będzie logika rejestracji
 			alert('Rejestrańsko');
@@ -50,13 +53,15 @@ const Form = () => {
 						placeholder='Email'
 						icon={emailIcon}
 						error={errors.userMail}
-						{...register('userMail', {
-							required: 'Adres e-mail jest wymagany',
-							pattern: {
-								value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i,
-								message: 'Wprowadź poprawny format adresu e-mail',
-							},
-						})}
+						// Ten zakomentowany kod jest przykładem walidacji danych na froncie, jak chcesz go użyć to se odkomentuj.
+						// Na razie jest komentarz bo nie chciało mi się wpisywać url z łapy xdxd
+						// {...register('userMail', {
+						// 	required: 'Adres e-mail jest wymagany',
+						// 	pattern: {
+						// 		value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i,
+						// 		message: 'Wprowadź poprawny format adresu e-mail',
+						// 	},
+						// })}
 					/>
 					{errors.userMail && (
 						<p className=' text-negative text-left w-full'>
@@ -69,9 +74,10 @@ const Form = () => {
 						placeholder='Hasło'
 						icon={lockIcon}
 						error={errors.userPassword}
-						{...register('userPassword', {
-							required: 'Hasło jest wymagane',
-						})}
+						// Tu też
+						// {...register('userPassword', {
+						// 	required: 'Hasło jest wymagane',
+						// })}
 					/>
 					{errors.userPassword && (
 						<p className=' text-negative text-left w-full'>
