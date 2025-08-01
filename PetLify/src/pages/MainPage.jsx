@@ -86,8 +86,11 @@ const MainPage = () => {
 		},
 	];
 	return (
-		<div className='py-4 px-6 '>
-			<div className='flex flex-col items-center justify-center gap-2'>
+		<div className='bg-secondary flex lg:h-screen'>
+			<div className='lg:flex lg:w-4/10 lg:bg-main items-center justify-center overflow-y-hidden hidden'>
+				<h2 className='font-bold text-4xl text-center'>Tutaj będzie mapa!</h2>
+			</div>
+			<div className='flex flex-col items-center justify-center gap-2 py-4 px-6 lg:w-6/10'>
 				<div className='w-full'>
 					<button className='bg-cta w-full rounded-xl p-2 cursor-pointer'>
 						+ Zgłoś zwierzę
@@ -132,11 +135,11 @@ const MainPage = () => {
 						</svg>
 					</button>
 				</div>
-
-				{/* <PetCard pets={pets} /> */}
-				{pets.map((pet) => (
-					<PetCard key={pet.id} pet={pet} />
-				))}
+				<div className='custom-scroll flex flex-col w-full gap-2 lg:overflow-y-scroll pr-2'>
+					{pets.map((pet) => (
+						<PetCard key={pet.id} pet={pet} />
+					))}
+				</div>
 			</div>
 		</div>
 	);
