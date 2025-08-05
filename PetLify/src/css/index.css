@@ -10,6 +10,7 @@
 	--color-negative: #ea4144;
 	--color-positive: #54de77;
 	--color-gray: #767b86;
+	--color-user-options-fill: #272a27;
 }
 
 @layer base {
