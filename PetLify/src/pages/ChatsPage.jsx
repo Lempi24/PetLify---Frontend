@@ -18,7 +18,7 @@ const ChatsPage = () => {
 						handleBurger={() => setIsBurgerOpen((prev) => !prev)}
 					/>
 				</div>
-				<div className='flex flex-col items-center gap-4'>
+				<div className='flex flex-col items-center gap-4 lg:overflow-y-scroll custom-scroll pl-2'>
 					<UserChats
 						userName={'Anna Nowak'}
 						petName={'Burek'}
@@ -36,6 +36,76 @@ const ChatsPage = () => {
 						}
 						lastMessageTime={'2 godz. temu'}
 						seen={false}
+					/>
+					<UserChats
+						userName={'Ewa Zielińska'}
+						petName={'Grubcio'}
+						lastMessage={'Dziękuję za informację!'}
+						lastMessageTime={'Wczoraj'}
+						seen={true}
+					/>
+					<UserChats
+						userName={'Ewa Zielińska'}
+						petName={'Grubcio'}
+						lastMessage={'Dziękuję za informację!'}
+						lastMessageTime={'Wczoraj'}
+						seen={true}
+					/>
+					<UserChats
+						userName={'Ewa Zielińska'}
+						petName={'Grubcio'}
+						lastMessage={'Dziękuję za informację!'}
+						lastMessageTime={'Wczoraj'}
+						seen={true}
+					/>
+					<UserChats
+						userName={'Ewa Zielińska'}
+						petName={'Grubcio'}
+						lastMessage={'Dziękuję za informację!'}
+						lastMessageTime={'Wczoraj'}
+						seen={true}
+					/>
+					<UserChats
+						userName={'Ewa Zielińska'}
+						petName={'Grubcio'}
+						lastMessage={'Dziękuję za informację!'}
+						lastMessageTime={'Wczoraj'}
+						seen={true}
+					/>
+					<UserChats
+						userName={'Ewa Zielińska'}
+						petName={'Grubcio'}
+						lastMessage={'Dziękuję za informację!'}
+						lastMessageTime={'Wczoraj'}
+						seen={true}
+					/>
+					<UserChats
+						userName={'Ewa Zielińska'}
+						petName={'Grubcio'}
+						lastMessage={'Dziękuję za informację!'}
+						lastMessageTime={'Wczoraj'}
+						seen={true}
+					/>
+					<UserChats
+						userName={'Ewa Zielińska'}
+						petName={'Grubcio'}
+						lastMessage={'Dziękuję za informację!'}
+						lastMessageTime={'Wczoraj'}
+						seen={true}
+					/>
+					<UserChats
+						userName={'Ewa Zielińska'}
+						petName={'Grubcio'}
+						lastMessage={'Dziękuję za informację!'}
+						lastMessageTime={'Wczoraj'}
+						seen={true}
+					/>
+					<UserChats
+						userName={'Ewa Zielińska'}
+						petName={'Grubcio'}
+						lastMessage={'Dziękuję za informację!'}
+						lastMessageTime={'Wczoraj'}
+						seen={true}
 					/>
 					<UserChats
 						userName={'Ewa Zielińska'}

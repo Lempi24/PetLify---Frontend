@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import PetCard from '../components/PetCard';
+import PetCard from '../components/ui/PetCard';
 import Burek from '../img/burek.jpg';
 import { Link, useNavigate } from 'react-router-dom';
 const MainPage = () => {
