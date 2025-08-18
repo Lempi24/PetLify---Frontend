@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom';
-import SubPagesNav from '../components/SubPagesNav';
+import SubPagesNav from '../components/ui/SubPagesNav';
 const ReportsPage = () => {
 	const location = useLocation();
 	const currentPath = location.pathname;

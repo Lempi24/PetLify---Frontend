@@ -16,7 +16,7 @@ const SettingsButtonContainer = ({
 					type='button'
 					className={`${
 						negative ? 'bg-negative' : 'bg-cta'
-					} py-2 px-6 rounded-xl`}
+					} py-2 px-6 rounded-xl cursor-pointer`}
 				>
 					{btnMessage}
 				</button>
@@ -26,7 +26,7 @@ const SettingsButtonContainer = ({
 					onClick={radioStateHandle}
 					className={`relative w-[60px] h-[30px] ${
 						isChecked ? 'bg-cta' : 'bg-main'
-					} rounded-2xl transition-colors duration-300`}
+					} rounded-2xl transition-colors duration-300 cursor-pointer`}
 				>
 					<div
 						className={`absolute ${

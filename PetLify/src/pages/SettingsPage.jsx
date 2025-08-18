@@ -1,8 +1,9 @@
 import { useLocation } from 'react-router-dom';
 import { useState } from 'react';
-import SubPagesNav from '../components/SubPagesNav';
+import SubPagesNav from '../components/ui/SubPagesNav';
 import dogo from '../img/burek.jpg';
-import SettingsButtonContainer from '../components/SettingsButtonContainer';
+import SettingsButtonContainer from '../components/ui/SettingsButtonContainer';
+import BurgerMenu from '../components/ui/BurgerMenu';
 const SettingsPage = () => {
 	const location = useLocation();
 	const currentPath = location.pathname;
@@ -23,21 +24,10 @@ const SettingsPage = () => {
 			<div className='flex flex-col gap-10 px-5 w-full h-screen bg-secondary py-5'>
 				<div className='flex items-center'>
 					<h2 className='text-2xl border-b-2 w-full py-5'>Ustawienia</h2>
-					<div
-						onClick={() => setIsBurgerOpen((prev) => !prev)}
-						className='relative flex flex-col items-center justify-center w-[50px] h-[50px] z-1000 lg:hidden'
-					>
-						<div
-							className={`absolute ${
-								isBurgerOpen ? 'rotate-45' : '-translate-y-3'
-							} h-[3px] w-full bg-white transition-transform duration-300`}
-						></div>
-						<div
-							className={`absolute ${
-								isBurgerOpen ? '-rotate-45' : ''
-							} h-[3px] w-full bg-white transition-transform duration-300`}
-						></div>
-					</div>
+					<BurgerMenu
+						isBurgerOpen={isBurgerOpen}
+						handleBurger={() => setIsBurgerOpen((prev) => !prev)}
+					/>
 				</div>
 				<div className='space-y-3'>
 					<p className='text-cta'>Profil zwierzaka</p>

@@ -121,7 +121,7 @@ const MainPage = () => {
 					</button>
 				</div>
 				<div className='relative w-full flex items-center justify-between'>
-					<button className='w-[50px] h-[50px] bg-cta rounded-xl fill-text p-1'>
+					<button className='w-[50px] h-[50px] bg-cta rounded-xl fill-text p-1 cursor-pointer'>
 						<svg
 							xmlns='http://www.w3.org/2000/svg'
 							viewBox='0 0 640 640'
