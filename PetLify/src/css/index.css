@@ -30,3 +30,7 @@
 	background: var(--color-cta);
 	border-radius: 5px;
 }
+.button-animation > img:hover {
+	transform: scale(0.2) !important;
+	transition: transform 0.3s ease !important;
+}

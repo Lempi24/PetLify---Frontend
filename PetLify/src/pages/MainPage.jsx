@@ -245,27 +245,31 @@ const MainPage = () => {
 							<p className='text-center'>Wybierz odpowiednią opcję:</p>
 						</div>
 						<div className='flex items-center justify-around'>
-							<div className='relative p-1'>
-								<button className='h-100 w-full overflow-hidden cursor-pointer'>
+							<div className='relative p-1 w-1/2'>
+								<button className='group h-100 w-full overflow-hidden cursor-pointer'>
 									<img
 										src={LostDog}
 										alt='Confused dog looking up'
-										className='w-full h-full object-cover object-center'
+										className='w-full h-full object-cover object-center group-hover:scale-150 transition-transform duration-300'
 									/>
 									<div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-full h-full bg-main-transparent'>
-										<p className='text-xl font-bold'>Zaginiony</p>
+										<p className='text-xl font-bold group-hover:scale-80 transition-transform duration-300'>
+											Zaginiony
+										</p>
 									</div>
 								</button>
 							</div>
-							<div className='relative p-1'>
-								<button className='h-100 w-full overflow-hidden cursor-pointer'>
+							<div className='relative p-1 w-1/2'>
+								<button className='group h-100 w-full overflow-hidden cursor-pointer'>
 									<img
 										src={FoundCat}
 										alt='Relaxed cat sleeping on the couch'
-										className='w-full h-full object-cover object-center'
+										className='w-full h-full object-cover object-center group-hover:scale-150 transition-transform duration-300'
 									/>
 									<div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-full h-full bg-main-transparent'>
-										<p className='text-xl font-bold'>Znaleziony</p>
+										<p className='text-xl font-bold group-hover:scale-80 transition-transform duration-300'>
+											Znaleziony
+										</p>
 									</div>
 								</button>
 							</div>
