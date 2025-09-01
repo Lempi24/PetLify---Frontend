@@ -282,7 +282,9 @@ const MainPage = () => {
 					</div>
 				</div>
 			)}
-			{selectedPet && <PetInfo pet={selectedPet} />}
+			{selectedPet && (
+				<PetInfo pet={selectedPet} setSelectedPet={setSelectedPet} />
+			)}
 		</div>
 	);
 };

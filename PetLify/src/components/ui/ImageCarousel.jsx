@@ -23,7 +23,7 @@ const images = [
 const ImageCarousel = () => {
 	return (
 		// Główny kontener do wycentrowania karuzeli i umieszczenia nawigacji
-		<div className='relative w-full max-w-2xl mx-auto'>
+		<div className='relative w-full max-w-2xl mx-auto border-b-2 border-accent pb-8'>
 			<Swiper
 				// 3. Włącz potrzebne moduły
 				modules={[Navigation, Pagination, A11y]}
