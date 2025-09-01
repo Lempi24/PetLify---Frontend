@@ -1,6 +1,9 @@
-const PetCard = ({ pet }) => {
+const PetCard = ({ pet, handlePetInfo }) => {
 	return (
-		<button className='bg-main flex items-center rounded-xl w-full py-1 px-3 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] cursor-pointer'>
+		<button
+			onClick={() => handlePetInfo(pet)}
+			className='bg-main flex items-center rounded-xl w-full py-1 px-3 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] cursor-pointer'
+		>
 			<div className='w-[60px] h-[60px] rounded-full overflow-hidden'>
 				<img
 					src={pet.imageUrl}

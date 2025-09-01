@@ -34,3 +34,23 @@
 	transform: scale(0.2) !important;
 	transition: transform 0.3s ease !important;
 }
+/* src/index.css */
+
+/* Kontener dla kropek - tworzymy z niego zaokrąglone tło */
+.swiper-pagination-custom {
+	@apply bg-black/30 backdrop-blur-sm p-2 rounded-full flex items-center gap-x-2;
+}
+
+/* Styl dla pojedynczej kropki (nieaktywnej) */
+.swiper-pagination-custom .swiper-pagination-bullet {
+	@apply w-2.5 h-2.5 bg-white/60 rounded-full cursor-pointer transition-all duration-300;
+
+	/* Resetujemy domyślne style swipera */
+	margin: 0 !important;
+	opacity: 1;
+}
+
+/* Styl dla aktywnej kropki */
+.swiper-pagination-custom .swiper-pagination-bullet-active {
+	@apply bg-cta w-3 h-3;
+}

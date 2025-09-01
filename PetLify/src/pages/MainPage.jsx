@@ -4,6 +4,7 @@ import Burek from '../img/burek.jpg';
 import { Link, useNavigate } from 'react-router-dom';
 import LostDog from '../img/lost-dog.jpg';
 import FoundCat from '../img/found-cat.jpg';
+import PetInfo from '../components/ui/PetInfo';
 const MainPage = () => {
 	const [activeTab, setActiveTab] = useState('lost');
 	const [userPanelActive, setUserPanelActive] = useState(false);
@@ -11,6 +12,7 @@ const MainPage = () => {
 		formChoiceActive: false,
 		formActive: false,
 	});
+	const [selectedPet, setSelectedPet] = useState(null);
 	const pets = [
 		{
 			id: 1,
@@ -96,6 +98,9 @@ const MainPage = () => {
 	const handleLogOut = () => {
 		//Tutaj będzie logika wylogowania, zabicie tokena, navigacja do logowania
 		alert('Wylogowanie');
+	};
+	const handlePetInfo = (pet) => {
+		setSelectedPet(pet);
 	};
 	return (
 		<div className='relative bg-secondary flex lg:h-screen'>
@@ -207,7 +212,7 @@ const MainPage = () => {
 				</div>
 				<div className='custom-scroll flex flex-col w-full gap-2 lg:overflow-y-scroll pr-2'>
 					{pets.map((pet) => (
-						<PetCard key={pet.id} pet={pet} />
+						<PetCard key={pet.id} pet={pet} handlePetInfo={handlePetInfo} />
 					))}
 				</div>
 			</div>
@@ -277,6 +282,7 @@ const MainPage = () => {
 					</div>
 				</div>
 			)}
+			{selectedPet && <PetInfo pet={selectedPet} />}
 		</div>
 	);
 };
