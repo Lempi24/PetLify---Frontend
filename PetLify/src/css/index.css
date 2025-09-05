@@ -54,3 +54,17 @@
 .swiper-pagination-custom .swiper-pagination-bullet-active {
 	@apply bg-cta w-3 h-3;
 }
+.Toastify__toast {
+	width: 450px !important;
+	background: var(--color-main) !important;
+	color: var(--color-text) !important;
+}
+@media (max-width: 768px) {
+	.Toastify__toast {
+		width: 100% !important;
+	}
+}
+.Toastify__close-button {
+	color: var(--color-cta) !important;
+	opacity: 1 !important;
+}

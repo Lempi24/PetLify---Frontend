@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
 import AuthPage from './pages/AuthPage';
 import MainPage from './pages/MainPage';
 import SettingsPage from './pages/SettingsPage';
@@ -7,6 +8,13 @@ import ReportsPage from './pages/ReportsPage';
 function App() {
 	return (
 		<div className='w-screen h-screen overflow-x-hidden bg-secondary lg:bg-main text-text'>
+			<ToastContainer
+				position='top-center'
+				autoClose={3000}
+				hideProgressBar={false}
+				closeOnClick={true}
+				className={'toastify-container'}
+			/>
 			<Router>
 				<Routes>
 					<Route path='/' element={<AuthPage />} />

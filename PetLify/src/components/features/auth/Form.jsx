@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import dogo from '../../../img/dogo.png';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 const Form = () => {
 	const navigate = useNavigate();
 	const [isLoging, setIsLoging] = useState(true);
@@ -23,12 +25,42 @@ const Form = () => {
 
 	const submitCall = async (data) => {
 		if (isLoging) {
-			//Tutaj będzie logika logowania
-			navigate('/main-page');
-			// alert('Logowańsko');
+			try {
+				const response = await axios.post(
+					import.meta.env.VITE_BACKEND_URL + '/login',
+					{
+						email: data.userMail,
+						password: data.userPassword,
+					}
+				);
+				if (response.data.token) {
+					localStorage.setItem('token', response.data.token);
+					reset();
+					navigate('/main-page');
+				}
+			} catch (error) {
+				console.error(
+					'Login failed:',
+					error.response?.data?.message || 'An error occurred.'
+				);
+				toast.error('Niepoprawny email lub hasło. Spróbuj ponownie.');
+			}
 		} else {
-			//Tutaj będzie logika rejestracji
-			alert('Rejestrańsko');
+			try {
+				await axios.post(import.meta.env.VITE_BACKEND_URL + '/register', {
+					email: data.userMail,
+					password: data.userPassword,
+				});
+				reset();
+				setIsLoging(true);
+				toast.success('Rejestracja udana! Teraz możesz się zalogować.');
+			} catch (error) {
+				if (error.response && error.response.status === 409) {
+					toast.error('Użytkownik o podanym emailu już istnieje.');
+				} else {
+					toast.error('Wystąpił błąd podczas rejestracji. Spróbuj ponownie.');
+				}
+			}
 		}
 	};
 	const changeForm = () => {
@@ -53,15 +85,13 @@ const Form = () => {
 						placeholder='Email'
 						icon={emailIcon}
 						error={errors.userMail}
-						// Ten zakomentowany kod jest przykładem walidacji danych na froncie, jak chcesz go użyć to se odkomentuj.
-						// Na razie jest komentarz bo nie chciało mi się wpisywać url z łapy xdxd
-						// {...register('userMail', {
-						// 	required: 'Adres e-mail jest wymagany',
-						// 	pattern: {
-						// 		value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i,
-						// 		message: 'Wprowadź poprawny format adresu e-mail',
-						// 	},
-						// })}
+						{...register('userMail', {
+							required: 'Adres e-mail jest wymagany',
+							pattern: {
+								value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i,
+								message: 'Wprowadź poprawny format adresu e-mail',
+							},
+						})}
 					/>
 					{errors.userMail && (
 						<p className=' text-negative text-left w-full'>
@@ -74,10 +104,9 @@ const Form = () => {
 						placeholder='Hasło'
 						icon={lockIcon}
 						error={errors.userPassword}
-						// Tu też
-						// {...register('userPassword', {
-						// 	required: 'Hasło jest wymagane',
-						// })}
+						{...register('userPassword', {
+							required: 'Hasło jest wymagane',
+						})}
 					/>
 					{errors.userPassword && (
 						<p className=' text-negative text-left w-full'>

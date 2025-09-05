@@ -6,6 +6,7 @@ import LostDog from '../img/lost-dog.jpg';
 import FoundCat from '../img/found-cat.jpg';
 import PetInfo from '../components/ui/PetInfo';
 const MainPage = () => {
+	const navigate = useNavigate();
 	const [activeTab, setActiveTab] = useState('lost');
 	const [userPanelActive, setUserPanelActive] = useState(false);
 	const [handlePopUpState, setHandlePopUpState] = useState({
@@ -96,8 +97,8 @@ const MainPage = () => {
 		},
 	];
 	const handleLogOut = () => {
-		//Tutaj będzie logika wylogowania, zabicie tokena, navigacja do logowania
-		alert('Wylogowanie');
+		localStorage.removeItem('token');
+		navigate('/');
 	};
 	const handlePetInfo = (pet) => {
 		setSelectedPet(pet);
