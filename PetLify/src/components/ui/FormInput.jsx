@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const FormInput = ({ type, placeholder, icon, label, error, ...rest }) => {
+const FormInput = ({ type, placeholder, icon, label, error, options = [], ...rest }) => {
 	const [isPasswordShown, setIsPasswordShown] = useState(false);
 
 	const togglePasswordVisibility = () => {
@@ -19,12 +19,31 @@ const FormInput = ({ type, placeholder, icon, label, error, ...rest }) => {
 				<path d={icon} />
 			</svg>
 
-			<input
-				type={inputType}
-				placeholder={placeholder}
-				{...rest}
-				className='text-gray pl-12 pr-3 py-3 rounded-md bg-text border-accent border-2 placeholder:text-gray w-full'
-			/>
+			{type === 'select' ? (
+				<select
+					{...rest}
+					className={`text-gray pl-12 pr-3 py-3 rounded-md bg-text border-accent border-2 w-full ${
+						error ? 'border-red-500' : ''
+					}`}
+				>
+					<option value="">-- Wybierz --</option>
+					{options.map((opt) => (
+						<option key={opt.value} value={opt.value}>
+							{opt.label}
+						</option>
+					))}
+				</select>
+			) : (
+				<input
+					type={inputType}
+					placeholder={placeholder}
+					{...rest}
+					className={`text-gray pl-12 pr-3 py-3 rounded-md bg-text border-accent border-2 placeholder:text-gray w-full ${
+						error ? 'border-red-500' : ''
+					}`}
+				/>
+			)}
+
 			{type === 'password' && (
 				<button
 					type='button'

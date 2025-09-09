@@ -252,7 +252,12 @@ const MainPage = () => {
 						</div>
 						<div className='flex items-center justify-around'>
 							<div className='relative p-1 w-1/2'>
-								<button className='group h-100 w-full overflow-hidden cursor-pointer'>
+								<button className='group h-100 w-full overflow-hidden cursor-pointer'
+									onClick={() => {
+										setHandlePopUpState({ formChoiceActive: false, formActive: false });
+										navigate('/main-page/create-lost-form')
+									}}
+								>
 									<img
 										src={LostDog}
 										alt='Confused dog looking up'
