@@ -169,7 +169,7 @@ const LostForm = () => {
 							type='text'
 							placeholder='Wpisz'
 							{...register('petAge')}
-							error={errors.Age}
+							error={errors.petAge}
 						/>
 					</div>
 
