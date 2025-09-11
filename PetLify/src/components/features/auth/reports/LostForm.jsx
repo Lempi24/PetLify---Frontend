@@ -127,7 +127,7 @@ const LostForm = () => {
 						</label>
 						<FormInput
 							type='text'
-							placeholder='Wpisz'
+							placeholder='Np. Reksio, Mruczek'
 							{...register('petName', { required: 'To pole jest wymagane' })}
 							error={errors.petName}
 						/>
@@ -154,7 +154,7 @@ const LostForm = () => {
 						</label>
 						<FormInput
 							type='text'
-							placeholder='Wpisz'
+							placeholder='Np. Labrador, Maine Coon'
 							{...register('petBreed')}
 							error={errors.petBreed}
 						/>
@@ -166,7 +166,7 @@ const LostForm = () => {
 						</label>
 						<FormInput
 							type='text'
-							placeholder='Wpisz'
+							placeholder='Np. Czarny, Szaro-biały'
 							{...register('petColor', {
 								required: 'Podaj kolor zwierzęcia',
 							})}
@@ -180,7 +180,7 @@ const LostForm = () => {
 						</label>
 						<FormInput
 							type='text'
-							placeholder='Wpisz'
+							placeholder='Np. 5 miesięcy, 3 lata'
 							{...register('petAge')}
 							error={errors.petAge}
 						/>
@@ -241,6 +241,8 @@ const LostForm = () => {
 												import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 											}`
 										);
+
+										console.log(res.data.results);
 
 										if (res.data.status === 'OK') {
 											const components = res.data.results[0].address_components;
@@ -317,9 +319,12 @@ const LostForm = () => {
 					</div>
 
 					<div>
-						<label className='block text-sm font-medium mb-1'>Opis</label>
+						<label className='block text-sm font-medium mb-1'>
+							Opis
+						</label>
 						<textarea
 							{...register('description')}
+							placeholder='Opisz dokładnie zwierzę, jego cechy charakterystyczne, ewentualną obrożę, numer chipa, typowe zachowania...'
 							className='w-full p-2 rounded-md bg-secondary border border-cta'
 							rows={4}
 						/>
