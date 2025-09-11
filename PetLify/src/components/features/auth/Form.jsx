@@ -1,5 +1,5 @@
 import FormInput from '../../ui/FormInput';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import dogo from '../../../img/dogo.png';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';

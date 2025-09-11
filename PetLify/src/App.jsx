@@ -20,7 +20,10 @@ function App() {
 				<Routes>
 					<Route path='/' element={<AuthPage />} />
 					<Route path='/main-page' element={<MainPage />} />
-					<Route path='/main-page/create-lost-form' element={<CreateLostFormPage />} />
+					<Route
+						path='/main-page/create-lost-form'
+						element={<CreateLostFormPage />}
+					/>
 					<Route path='/settings' element={<SettingsPage />} />
 					<Route path='/chats' element={<ChatsPage />} />
 					<Route path='/reports' element={<ReportsPage />} />
