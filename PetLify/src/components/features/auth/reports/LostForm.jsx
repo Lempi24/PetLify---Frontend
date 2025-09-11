@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useState, useEffect } from 'react';
+import { GoogleMap, LoadScript, Marker, Circle } from '@react-google-maps/api';
 
 const LostForm = () => {
 	const navigate = useNavigate();
@@ -13,6 +14,7 @@ const LostForm = () => {
 		formState: { errors },
 		reset,
 		watch,
+		setValue,
 	} = useForm({ mode: 'onChange' });
 
 	const petSpeciesTypes = [
@@ -30,8 +32,14 @@ const LostForm = () => {
 		{ label: 'Duży', value: 'large' },
 	];
 
+	const basePin = {
+		latitude: 52.4057,
+		longitude: 16.9313,
+	};
+
 	const [loading, setLoading] = useState(false);
 	const [preview, setPreview] = useState(null);
+	const [selectedPosition, setSelectedPosition] = useState(null);
 
 	const photoFile = watch('photo');
 
@@ -46,6 +54,12 @@ const LostForm = () => {
 			setPreview(null);
 		}
 	}, [photoFile]);
+
+	useEffect(() => {
+		register('lostLocation', {
+			required: 'Zaznacz lokalizację na mapie',
+		});
+	}, [register])
 
 	const onSubmit = async (data) => {
 		try {
@@ -72,7 +86,7 @@ const LostForm = () => {
 	return (
 		<div className='flex items-center justify-center min-h-screen text-text'>
 			<div>
-				<Link to='/main-page' className=''>
+				<Link to='/main-page'>
 					<svg
 						xmlns='http://www.w3.org/2000/svg'
 						viewBox='0 0 640 640'
@@ -92,59 +106,170 @@ const LostForm = () => {
 							Zgłoś zaginięcie zwierzęcia
 						</h2>
 
-						<FormInput
-							type='text'
-							placeholder='Imię zwierzęcia'
-							{...register('petName', { required: 'To pole jest wymagane' })}
-							error={errors.petName}
-						/>
+						<div>
+							<label className="block text-sm font-medium mb-1">
+								Podaj imię zwierzęcia
+							</label>
+							<FormInput
+								type='text'
+								placeholder='Imię zwierzęcia'
+								{...register('petName', { required: 'To pole jest wymagane' })}
+								error={errors.petName}
+							/>
+						</div>
 
-						<FormInput
-							type='select'
-							placeholder='Gatunek zwierzęcia'
-							options={petSpeciesTypes}
-							{...register('petSpecies', { required: 'To pole jest wymagane' })}
-							error={errors.petSpecies}
-						/>
+						<div>
+							<label className="block text-sm font-medium mb-1">
+								Podaj gatunek zwierzęcia
+							</label>
+							<FormInput
+								type='select'
+								placeholder='Gatunek zwierzęcia'
+								options={petSpeciesTypes}
+								{...register('petSpecies', { required: 'To pole jest wymagane' })}
+								error={errors.petSpecies}
+							/>
+						</div>
+						
+						<div>
+							<label className="block text-sm font-medium mb-1">
+								Podaj rasę zwierzęcia
+							</label>
+							<FormInput
+								type='text'
+								placeholder='Rasa zwierzęcia'
+								{...register('petBreed')}
+								error={errors.petBreed}
+							/>
+						</div>
 
-						<FormInput
-							type='text'
-							placeholder='Rasa zwierzęcia'
-							{...register('petBreed')}
-							error={errors.petBreed}
-						/>
+						<div>
+							<label className="block text-sm font-medium mb-1">
+								Podaj kolor zwierzęcia
+							</label>
+							<FormInput
+								type='text'
+								placeholder='Kolor zwierzęcia'
+								{...register('petColor', { required: 'Podaj kolor zwierzęcia' })}
+								error={errors.petColor}
+							/>
+						</div>
 
-						<FormInput
-							type='text'
-							placeholder='Kolor zwierzęcia'
-							{...register('petColor', { required: 'Podaj kolor zwierzęcia' })}
-							error={errors.petColor}
-						/>
+						<div>
+							<label className="block text-sm font-medium mb-1">
+								Podaj wielkość zwierzęcia
+							</label>
+							<FormInput
+								type='select'
+								placeholder='Wielkość zwierzęcia'
+								options={petSizeTypes}
+								{...register('petSize', {
+									required: 'Podaj wielkość zwierzęcia',
+								})}
+								error={errors.petSize}
+							/>
+						</div>
 
-						<FormInput
-							type='select'
-							placeholder='Wielkość zwierzęcia'
-							options={petSizeTypes}
-							{...register('petSize', {
-								required: 'Podaj wielkość zwierzęcia',
-							})}
-							error={errors.petSize}
-						/>
+						<div>
+							<label className="block text-sm font-medium mb-1">
+								Podaj datę zaginięcia
+							</label>
+							<FormInput
+								type="date"
+								placeholder="Data zaginięcia"
+								{...register("lostDate", { required: "Podaj datę zaginięcia" })}
+								error={errors.lostDate}
+							/>
+						</div>
 
-						<FormInput
-							type='date'
-							placeholder='Data zaginięcia'
-							{...register('lostDate', { required: 'Podaj datę zaginięcia' })}
-							error={errors.lostDate}
-						/>
+						<div className='mt-4'>
+							<label className='block text-sm font-medium mb-2'>
+								Zaznacz na mapie lokalizację zaginięcia
+							</label>
+							<LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
+								<GoogleMap
+									mapContainerStyle={{ width: '100%', height: '300px' }}
+									center={selectedPosition || {
+										lat: basePin.latitude,
+										lng: basePin.longitude,
+									}}
+									zoom={13}
+									onClick={async (event) => {
+										const lat = event.latLng.lat();
+										const lng = event.latLng.lng();
 
-						<FormInput
-							placeholder='Lokalizacja zaginięcia'
-							{...register('lostLocation', {
-								required: 'To pole jest wymagane',
-							})}
-							error={errors.lostLocation}
-						/>
+										setSelectedPosition({ lat, lng });
+
+										try {
+											const res = await axios.get(
+												`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+											);
+
+											if (res.data.status === 'OK') {
+												const components = res.data.results[0].address_components;
+
+												let street = '';
+												let city = '';
+
+												components.forEach((c) => {
+													if (c.types.includes('route')) {
+														street = c.long_name;
+													}
+													if (c.types.includes('locality')) {
+														city = c.long_name;
+													}
+												});
+
+												const finalAddress = `${street}, ${city}`;
+												setValue('lostLocation', finalAddress, { shouldValidate: true });
+												toast.success('Lokalizacja została ustawiona');
+											} else {
+												toast.error('Nie udało się pobrać adresu');
+											}
+										} catch (err) {
+											console.error(err);
+											toast.error('Błąd przy pobieraniu adresu');
+										}
+									}}
+									options={{
+										mapTypeControl: false,
+										streetViewControl: false,
+									}}
+								>
+									{selectedPosition && (
+										<>
+											<Marker
+												position={selectedPosition}
+												icon={{
+													url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+														<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#fe7f00">
+															<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+														</svg>
+													`),
+													scaledSize: new window.google.maps.Size(40, 40),
+												}}
+											/>
+											<Circle
+												center={selectedPosition}
+												radius={250}
+												options={{
+													fillColor: '#fe7f00',
+													fillOpacity: 0.1,
+													strokeColor: '#fe7f00',
+													strokeOpacity: 0.4,
+													strokeWeight: 2,
+													clickable: false,
+													draggable: false,
+													editable: false,
+													visible: true,
+													zIndex: 1,
+												}}
+											/>
+										</>
+									)}
+								</GoogleMap>
+							</LoadScript>
+						</div>
 
 						<div>
 							<label className='block text-sm font-medium mb-1'>Opis</label>
