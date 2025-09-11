@@ -163,6 +163,18 @@ const LostForm = () => {
 
 					<div>
 						<label className='block text-sm font-medium mb-1'>
+							Podaj wiek zwierzęcia
+						</label>
+						<FormInput
+							type='text'
+							placeholder='Wpisz'
+							{...register('petAge')}
+							error={errors.Age}
+						/>
+					</div>
+
+					<div>
+						<label className='block text-sm font-medium mb-1'>
 							Podaj wielkość zwierzęcia
 						</label>
 						<FormInput
@@ -232,10 +244,9 @@ const LostForm = () => {
 												}
 											});
 
-											const finalAddress = `${street}, ${city}`;
-											setValue('lostLocation', finalAddress, {
-												shouldValidate: true,
-											});
+											setValue('lostStreet', street, { shouldValidate: true });
+											setValue('lostCity', city, { shouldValidate: true });
+											setValue('lostCoordinates', `${lng},${lat}`, { shouldValidate: true });
 											toast.success('Lokalizacja została ustawiona');
 										} else {
 											toast.error('Nie udało się pobrać adresu');
