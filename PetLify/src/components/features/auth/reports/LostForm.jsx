@@ -112,7 +112,7 @@ const LostForm = () => {
 							</label>
 							<FormInput
 								type='text'
-								placeholder='Imię zwierzęcia'
+								placeholder='Wpisz'
 								{...register('petName', { required: 'To pole jest wymagane' })}
 								error={errors.petName}
 							/>
@@ -137,7 +137,7 @@ const LostForm = () => {
 							</label>
 							<FormInput
 								type='text'
-								placeholder='Rasa zwierzęcia'
+								placeholder='Wpisz'
 								{...register('petBreed')}
 								error={errors.petBreed}
 							/>
@@ -149,7 +149,7 @@ const LostForm = () => {
 							</label>
 							<FormInput
 								type='text'
-								placeholder='Kolor zwierzęcia'
+								placeholder='Wpisz'
 								{...register('petColor', { required: 'Podaj kolor zwierzęcia' })}
 								error={errors.petColor}
 							/>
