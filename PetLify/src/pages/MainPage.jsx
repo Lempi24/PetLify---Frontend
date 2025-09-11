@@ -5,8 +5,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import LostDog from '../img/lost-dog.jpg';
 import FoundCat from '../img/found-cat.jpg';
 import PetInfo from '../components/ui/PetInfo';
+import useAuth from '../hooks/useAuth';
 const MainPage = () => {
 	const navigate = useNavigate();
+	const loggedUser = useAuth();
+	//Tutaj masz logowanie do konsoli maila obecnie zalogowanego usera :)
+	console.log(loggedUser);
 	const [activeTab, setActiveTab] = useState('lost');
 	const [userPanelActive, setUserPanelActive] = useState(false);
 	const [handlePopUpState, setHandlePopUpState] = useState({
@@ -252,10 +256,14 @@ const MainPage = () => {
 						</div>
 						<div className='flex items-center justify-around'>
 							<div className='relative p-1 w-1/2'>
-								<button className='group h-100 w-full overflow-hidden cursor-pointer'
+								<button
+									className='group h-100 w-full overflow-hidden cursor-pointer'
 									onClick={() => {
-										setHandlePopUpState({ formChoiceActive: false, formActive: false });
-										navigate('/main-page/create-lost-form')
+										setHandlePopUpState({
+											formChoiceActive: false,
+											formActive: false,
+										});
+										navigate('/main-page/create-lost-form');
 									}}
 								>
 									<img
