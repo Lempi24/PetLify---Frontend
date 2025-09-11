@@ -55,23 +55,36 @@ const LostForm = () => {
 		}
 	}, [photoFile]);
 
-	useEffect(() => {
-		register('lostLocation', {
-			required: 'Zaznacz lokalizację na mapie',
-		});
-	}, [register]);
-
 	const onSubmit = async (data) => {
+		console.log('onSubmit został wywołany!');
+		const token = localStorage.getItem('token');
+		console.log('Token:', token);
+
+		console.log('Form data przed wysyłką:', data);
+
 		try {
 			setLoading(true);
 			const formData = new FormData();
+
 			for (const key in data) {
-				formData.append(key, data[key]);
+				if (key === 'photo' && data.photo?.length > 0) {
+					formData.append('photo', data.photo[0]);
+				} else {
+					formData.append(key, data[key]);
+				}
 			}
-			await axios.post(
+
+			const response = await axios.post(
 				import.meta.env.VITE_BACKEND_URL + '/main-page/create-lost-form',
-				formData
+				formData,
+				{
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				}
 			);
+
+			console.log('Success:', response);
 			toast.success('Zgłoszenie zostało wysłane');
 			reset();
 			navigate('/main-page');
@@ -246,7 +259,12 @@ const LostForm = () => {
 
 											setValue('lostStreet', street, { shouldValidate: true });
 											setValue('lostCity', city, { shouldValidate: true });
-											setValue('lostCoordinates', `${lng},${lat}`, { shouldValidate: true });
+
+											const coordinates = `${lng},${lat}`;
+											setValue('lostCoordinates', coordinates, {
+												shouldValidate: true,
+											});
+
 											toast.success('Lokalizacja została ustawiona');
 										} else {
 											toast.error('Nie udało się pobrać adresu');
