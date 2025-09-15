@@ -1,12 +1,11 @@
 import ImageCarousel from './ImageCarousel';
 const PetInfo = ({ pet, setSelectedPet }) => {
-	console.log(pet);
 	return (
 		<div className='fixed backdrop-blur-2xl h-screen w-screen z-10'>
 			<div className='fixed left-1/2 -translate-x-1/2 h-full w-full lg:w-1/2 bg-main  overflow-y-auto p-6'>
 				<div className='flex flex-col gap-8'>
 					<div className='flex items-center gap-4'>
-						<h2 className='font-bold text-4xl'>{pet.name}</h2>
+						<h2 className='font-bold text-4xl'>{pet.pet_name}</h2>
 						<span className='bg-negative p-2 rounded-2xl'>Zaginiony</span>
 						<button
 							onClick={() => setSelectedPet(null)}
@@ -26,34 +25,31 @@ const PetInfo = ({ pet, setSelectedPet }) => {
 				<div className='flex flex-col py-8 border-b-2 border-accent gap-4'>
 					<div className='flex items-center gap-2'>
 						<p className='bold text-xl'>Gatunek:</p>
-						<p className='text-accent'>{pet.species}</p>
+						<p className='text-accent'>{pet.pet_species}</p>
 					</div>
 					<div className='flex items-center gap-2'>
 						<p className='bold text-xl'>Rasa:</p>
-						<p className='text-accent'>{pet.breed}</p>
+						<p className='text-accent'>{pet.pet_breed}</p>
 					</div>
 					<div className='flex items-center gap-2'>
 						<p className='bold text-xl'>Płeć:</p>
-						<p className='text-accent'>Samiec</p>
+						<p className='text-accent'>Trzeba dodać xd</p>
 					</div>
 					<div className='flex items-center gap-2'>
 						<p className='bold text-xl'>Wiek:</p>
-						<p className='text-accent'>Ok. 5 lat</p>
+						<p className='text-accent'>Ok. {pet.pet_age}</p>
 					</div>
 
 					<div className='space-y-2 mt-6 border-t border-secondary pt-4'>
 						<p className='font-bold text-xl'>Znaki szczególne:</p>
-						<p className='text-accent'>
-							Brązowa sierść, biała krawatka na piersi, czarna obroża
-							przeciwpchelna. Przyjazny, ale może być nieufny.
-						</p>
+						<p className='text-accent'>{pet.description}</p>
 					</div>
 
 					<div className='space-y-2 mt-6 border-t border-secondary pt-4'>
 						<p className='font-bold text-xl'>Ostatnio widziany:</p>
 						<p className='text-accent'>
 							01.03.2022, ok 18:30 <br />
-							{pet.location}
+							{pet.street}, {pet.city}
 						</p>
 					</div>
 				</div>

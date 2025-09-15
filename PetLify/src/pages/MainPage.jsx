@@ -1,16 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PetCard from '../components/ui/PetCard';
 import Burek from '../img/burek.jpg';
 import { Link, useNavigate } from 'react-router-dom';
 import LostDog from '../img/lost-dog.jpg';
 import FoundCat from '../img/found-cat.jpg';
 import PetInfo from '../components/ui/PetInfo';
-import useAuth from '../hooks/useAuth';
+import axios from 'axios';
 const MainPage = () => {
 	const navigate = useNavigate();
-	const loggedUser = useAuth();
-	//Tutaj masz logowanie do konsoli maila obecnie zalogowanego usera :)
-	console.log(loggedUser);
 	const [activeTab, setActiveTab] = useState('lost');
 	const [userPanelActive, setUserPanelActive] = useState(false);
 	const [handlePopUpState, setHandlePopUpState] = useState({
@@ -18,6 +15,31 @@ const MainPage = () => {
 		formActive: false,
 	});
 	const [selectedPet, setSelectedPet] = useState(null);
+	const [petsData, setPetsData] = useState([]);
+	const fetchPetsData = async () => {
+		const token = localStorage.getItem('token');
+		if (!token) {
+			navigate('/');
+			return;
+		}
+		try {
+			const response = await axios.get(
+				import.meta.env.VITE_BACKEND_URL + '/main-page/fetch-pets',
+				{
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				}
+			);
+			console.log('Fetched pets data:', response.data);
+			setPetsData(response.data);
+		} catch (error) {
+			console.error('Error fetching pets data:', error);
+		}
+	};
+	useEffect(() => {
+		fetchPetsData();
+	}, []);
 	const pets = [
 		{
 			id: 1,
@@ -100,6 +122,7 @@ const MainPage = () => {
 			imageUrl: Burek,
 		},
 	];
+
 	const handleLogOut = () => {
 		localStorage.removeItem('token');
 		navigate('/');
@@ -216,7 +239,7 @@ const MainPage = () => {
 					</div>
 				</div>
 				<div className='custom-scroll flex flex-col w-full gap-2 lg:overflow-y-scroll pr-2'>
-					{pets.map((pet) => (
+					{petsData.map((pet) => (
 						<PetCard key={pet.id} pet={pet} handlePetInfo={handlePetInfo} />
 					))}
 				</div>
