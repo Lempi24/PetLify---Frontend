@@ -16,7 +16,8 @@ const MainPage = () => {
 	});
 	const [selectedPet, setSelectedPet] = useState(null);
 	const [petsData, setPetsData] = useState([]);
-	const fetchPetsData = async () => {
+	const fetchPetsData = async (type) => {
+		setActiveTab(type);
 		const token = localStorage.getItem('token');
 		if (!token) {
 			navigate('/');
@@ -24,7 +25,7 @@ const MainPage = () => {
 		}
 		try {
 			const response = await axios.get(
-				import.meta.env.VITE_BACKEND_URL + '/main-page/fetch-pets',
+				import.meta.env.VITE_BACKEND_URL + `/main-page/fetch-pets?type=${type}`,
 				{
 					headers: {
 						Authorization: `Bearer ${token}`,
@@ -38,90 +39,8 @@ const MainPage = () => {
 		}
 	};
 	useEffect(() => {
-		fetchPetsData();
+		fetchPetsData('lost');
 	}, []);
-	const pets = [
-		{
-			id: 1,
-			name: 'Burek',
-			species: 'Pies',
-			breed: 'Mieszaniec',
-			location: 'Os. Zwycięstwa, Poznań',
-			imageUrl: Burek,
-		},
-		{
-			id: 2,
-			name: 'Mruczek',
-			species: 'Kot',
-			breed: 'Dachowiec',
-			location: 'Jeżyce, Poznań',
-			imageUrl: Burek,
-		},
-		{
-			id: 3,
-			name: 'Fiona',
-			species: 'Pies',
-			breed: 'Labrador Retriever',
-			location: 'Wilda, Poznań',
-			imageUrl: Burek,
-		},
-		{
-			id: 4,
-			name: 'Puszek',
-			species: 'Królik',
-			breed: 'Mini Lop',
-			location: 'Grunwald, Poznań',
-			imageUrl: Burek,
-		},
-		{
-			id: 5,
-			name: 'Ćwirek',
-			species: 'Ptak',
-			breed: 'Kanarek',
-			location: 'Rataje, Poznań',
-			imageUrl: Burek,
-		},
-		{
-			id: 6,
-			name: 'Bella',
-			species: 'Kot',
-			breed: 'Ragdoll',
-			location: 'Łazarz, Poznań',
-			imageUrl: Burek,
-		},
-		{
-			id: 7,
-			name: 'Szczurek',
-			species: 'Gryzoń',
-			breed: 'Szczur domowy',
-			location: 'Stare Miasto, Poznań',
-			imageUrl: Burek,
-		},
-		{
-			id: 8,
-			name: 'Max',
-			species: 'Pies',
-			breed: 'Owczarek Niemiecki',
-			location: 'Nowe Miasto, Poznań',
-			imageUrl: Burek,
-		},
-		{
-			id: 9,
-			name: 'Figaro',
-			species: 'Kot',
-			breed: 'Maine Coon',
-			location: 'Piątkowo, Poznań',
-			imageUrl: Burek,
-		},
-		{
-			id: 10,
-			name: 'Złotko',
-			species: 'Gryzoń',
-			breed: 'Chomik syryjski',
-			location: 'Winogrady, Poznań',
-			imageUrl: Burek,
-		},
-	];
 
 	const handleLogOut = () => {
 		localStorage.removeItem('token');
@@ -135,7 +54,7 @@ const MainPage = () => {
 			<div className='lg:flex lg:w-4/10 lg:bg-main items-center justify-center overflow-y-hidden hidden'>
 				<h2 className='font-bold text-4xl text-center'>Tutaj będzie mapa!</h2>
 			</div>
-			<div className='flex flex-col items-center justify-center gap-2 py-4 px-6 lg:w-6/10 w-full'>
+			<div className='flex flex-col items-center gap-2 py-4 px-6 lg:w-6/10 w-full'>
 				<div className='w-full'>
 					<button
 						onClick={() =>
@@ -154,7 +73,7 @@ const MainPage = () => {
 						className={`w-1/2 rounded-xl p-2 cursor-pointer transition-colors ${
 							activeTab === 'lost' ? 'bg-cta' : 'bg-gray-300 text-main'
 						}`}
-						onClick={() => setActiveTab('lost')}
+						onClick={() => fetchPetsData('lost')}
 					>
 						Zaginione
 					</button>
@@ -162,7 +81,7 @@ const MainPage = () => {
 						className={`w-1/2 rounded-xl p-2 cursor-pointer transition-colors ${
 							activeTab === 'found' ? 'bg-cta' : 'bg-gray-300 text-main'
 						}`}
-						onClick={() => setActiveTab('found')}
+						onClick={() => fetchPetsData('found')}
 					>
 						Znalezione
 					</button>
