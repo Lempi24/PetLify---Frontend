@@ -4,6 +4,7 @@ import SubPagesNav from '../components/ui/SubPagesNav';
 import dogo from '../img/burek.jpg';
 import SettingsButtonContainer from '../components/ui/SettingsButtonContainer';
 import BurgerMenu from '../components/ui/BurgerMenu';
+
 const SettingsPage = () => {
 	const location = useLocation();
 	const currentPath = location.pathname;

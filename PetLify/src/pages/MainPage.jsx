@@ -5,7 +5,9 @@ import LostDog from '../img/lost-dog.jpg';
 import FoundCat from '../img/found-cat.jpg';
 import PetInfo from '../components/ui/PetInfo';
 import axios from 'axios';
+import useAuth from '../hooks/useAuth';
 const MainPage = () => {
+	const loggedInUser = useAuth();
 	const navigate = useNavigate();
 	const [activeTab, setActiveTab] = useState('lost');
 	const [userPanelActive, setUserPanelActive] = useState(false);
@@ -116,8 +118,10 @@ const MainPage = () => {
 						}`}
 					>
 						<div>
-							<p className='text-xl font-bold'>Jan Kowalski</p>
-							<p className='text-sm'>example@gmail.com</p>
+							<p className='text-xl font-bold'>
+								{loggedInUser?.name ? 'Imię' : 'Użytkownik'}
+							</p>
+							<p className='text-sm'>{loggedInUser?.email}</p>
 						</div>
 						<div className='flex flex-col items-center gap-3'>
 							<Link

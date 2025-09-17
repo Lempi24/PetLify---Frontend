@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-
+import useAuth from '../../hooks/useAuth';
 const SubPagesNav = ({ currentPath, isBurgerOpen }) => {
+	const loggedInUser = useAuth();
 	return (
 		<div
 			className={`lg:w-2/5 px-10 space-y-10 bg-main h-full w-full z-100 ${
@@ -29,8 +30,8 @@ const SubPagesNav = ({ currentPath, isBurgerOpen }) => {
 					</svg>
 				</button>
 				<div>
-					<p>Jan Kowalski</p>
-					<p>example@gmail.com</p>
+					<p>{loggedInUser?.name ? 'Imię' : 'Użytkownik'}</p>
+					<p>{loggedInUser?.email}</p>
 				</div>
 			</div>
 			<div className='flex flex-col gap-3'>
