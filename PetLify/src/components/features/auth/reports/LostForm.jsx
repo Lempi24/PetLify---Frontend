@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { GoogleMap, LoadScript, Marker, Circle } from '@react-google-maps/api';
 
 const LostForm = () => {
+	const MAX_PHOTOS = 5;
 	const navigate = useNavigate();
 	const {
 		register,
@@ -15,6 +16,7 @@ const LostForm = () => {
 		reset,
 		watch,
 		setValue,
+		trigger,
 	} = useForm({ mode: 'onChange' });
 
 	const petSpeciesTypes = [
@@ -38,23 +40,52 @@ const LostForm = () => {
 	};
 
 	const [loading, setLoading] = useState(false);
-	const [preview, setPreview] = useState(null);
+	const [previews, setPreviews] = useState([]);
 	const [selectedPosition, setSelectedPosition] = useState(null);
 
-	const photoFile = watch('photo');
+	const photoFiles = watch('photos');
 
 	useEffect(() => {
-		if (photoFile && photoFile.length > 0) {
-			const file = photoFile[0];
-			const objectUrl = URL.createObjectURL(file);
-			setPreview(objectUrl);
+		if (photoFiles && photoFiles.length > 0) {
+			const objectUrls = Array.from(photoFiles).map((file) =>
+				URL.createObjectURL(file)
+			);
+			setPreviews(objectUrls);
 
-			return () => URL.revokeObjectURL(objectUrl);
+			return () => {
+				objectUrls.forEach((url) => URL.revokeObjectURL(url));
+			};
 		} else {
-			setPreview(null);
+			setPreviews([]);
 		}
-	}, [photoFile]);
+	}, [photoFiles]);
+	const removePhoto = (indexToRemove) => {
+		const updatedFiles = Array.from(photoFiles).filter(
+			(_, index) => index !== indexToRemove
+		);
 
+		const dataTransfer = new DataTransfer();
+		updatedFiles.forEach((file) => dataTransfer.items.add(file));
+
+		setValue('photos', dataTransfer.files, { shouldValidate: true });
+	};
+	const handleFileChange = (event) => {
+		const currentFiles = photoFiles ? Array.from(photoFiles) : [];
+		const newFiles = Array.from(event.target.files);
+
+		if (currentFiles.length + newFiles.length > MAX_PHOTOS) {
+			toast.error(`Możesz dodać maksymalnie ${MAX_PHOTOS} zdjęć.`);
+			event.target.value = '';
+			return;
+		}
+
+		const combinedFiles = [...currentFiles, ...newFiles];
+
+		const dataTransfer = new DataTransfer();
+		combinedFiles.forEach((file) => dataTransfer.items.add(file));
+
+		setValue('photos', dataTransfer.files, { shouldValidate: true });
+	};
 	const onSubmit = async (data) => {
 		console.log('onSubmit został wywołany!');
 		const token = localStorage.getItem('token');
@@ -67,8 +98,10 @@ const LostForm = () => {
 			const formData = new FormData();
 
 			for (const key in data) {
-				if (key === 'photo' && data.photo?.length > 0) {
-					formData.append('photo', data.photo[0]);
+				if (key === 'photos' && data.photos?.length > 0) {
+					Array.from(data.photos).forEach((file) => {
+						formData.append('photos', file);
+					});
 				} else {
 					formData.append(key, data[key]);
 				}
@@ -97,7 +130,7 @@ const LostForm = () => {
 	};
 
 	return (
-		<div className='flex justify-center items-start p-4 min-h-screen'>
+		<div className='flex justify-center items-start p-4 min-h-screen lg:w-1/2'>
 			<div className='w-full max-w-xl space-y-4'>
 				<div className='relative flex justify-center items-center mb-4 p-2g'>
 					<div className='absolute left-0'>
@@ -319,9 +352,7 @@ const LostForm = () => {
 					</div>
 
 					<div>
-						<label className='block text-sm font-medium mb-1'>
-							Opis
-						</label>
+						<label className='block text-sm font-medium mb-1'>Opis</label>
 						<textarea
 							{...register('description')}
 							placeholder='Opisz dokładnie zwierzę, jego cechy charakterystyczne, ewentualną obrożę, numer chipa, typowe zachowania...'
@@ -332,15 +363,25 @@ const LostForm = () => {
 
 					<div>
 						<label className='block text-sm font-medium mb-1'>
-							Zdjęcie zwierzęcia
+							Zdjęcie zwierzęcia (min. 1, max. {MAX_PHOTOS})
 						</label>
 
 						<input
 							type='file'
 							id='photo-upload'
-							{...register('photo', { required: 'Dodaj zdjęcie zwierzęcia' })}
+							{...register('photos', {
+								validate: {
+									required: (files) =>
+										files.length > 0 || 'Dodaj przynajmniej jedno zdjęcie.',
+									maxAmount: (files) =>
+										files.length <= MAX_PHOTOS ||
+										`Możesz dodać maksymalnie ${MAX_PHOTOS} zdjęć.`,
+								},
+							})}
 							accept='image/*'
+							multiple
 							className='hidden'
+							onChange={handleFileChange}
 						/>
 
 						<label
@@ -350,21 +391,32 @@ const LostForm = () => {
 							Wybierz zdjęcie
 						</label>
 
-						{errors.photo && (
+						{errors.photos && (
 							<p className='text-negative text-sm mt-1'>
-								{errors.photo.message}
+								{errors.photos.message}
 							</p>
 						)}
 					</div>
 
-					{preview && (
-						<div className='mt-2'>
-							<img
-								src={preview}
-								alt='Podgląd zdjęcia'
-								style={{ width: 300, height: 300, objectFit: 'cover' }}
-								className='rounded-md border border-cta'
-							/>
+					{previews.length > 0 && (
+						<div className='mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4'>
+							{previews.map((src, index) => (
+								<div key={index} className='relative group'>
+									<img
+										src={src}
+										alt={`Podgląd zdjęcia ${index + 1}`}
+										className='w-full h-24 object-cover rounded-md border border-cta'
+									/>
+									<button
+										type='button'
+										onClick={() => removePhoto(index)}
+										className='absolute top-1 right-1 bg-negative text-white rounded-full w-6 h-6 flex items-center justify-center text-sm cursor-pointer'
+										aria-label='Usuń zdjęcie'
+									>
+										X
+									</button>
+								</div>
+							))}
 						</div>
 					)}
 
@@ -376,7 +428,7 @@ const LostForm = () => {
 								? 'var(--color-positive)'
 								: 'var(--color-cta)',
 						}}
-						className='w-full text-white py-2 px-4 rounded-md transition duration-300 hover:opacity-90'
+						className='w-full text-white py-2 px-4 rounded-md transition duration-300 hover:opacity-90 cursor-pointer'
 					>
 						{loading ? 'Wysyłanie...' : 'Zgłoś zaginięcie'}
 					</button>

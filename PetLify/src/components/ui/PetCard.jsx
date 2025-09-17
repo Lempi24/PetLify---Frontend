@@ -6,7 +6,7 @@ const PetCard = ({ pet, handlePetInfo }) => {
 		>
 			<div className='w-[60px] h-[60px] rounded-full overflow-hidden'>
 				<img
-					src={pet.photo_url}
+					src={pet.photo_url[0]}
 					alt={pet.pet_name}
 					className='w-full h-full object-cover rounded-full'
 				/>

@@ -10,17 +10,16 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
-// Przykładowe dane do karuzeli
-//Wiadomo tutaj będzie pobieranie obrazów z propsów lub stanu z bazy danych
-const images = [
-	'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
-	'https://images.unsplash.com/photo-1597633611387-13ae230c9780?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
-	'https://images.unsplash.com/photo-1552053831-71594a27632d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1364&q=80',
-	'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1395&q=80',
-	'https://images.unsplash.com/photo-1583511655826-05700d52f4d9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1374&q=80',
-];
+// Zostawiłem komentarze w razie W jakby ktoś chciał się bardziej zaznajomić co jest 5
+// Bo jest to jakiś zewnętrzny komponent z jakiejś biblioteki
 
-const ImageCarousel = () => {
+const ImageCarousel = ({ images }) => {
+	const displayImages =
+		images && images.length > 0
+			? images
+			: [
+					'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
+			  ];
 	return (
 		// Główny kontener do wycentrowania karuzeli i umieszczenia nawigacji
 		<div className='relative w-full max-w-2xl mx-auto border-b-2 border-accent pb-8'>
@@ -42,7 +41,7 @@ const ImageCarousel = () => {
 				}}
 				className='rounded-2xl'
 			>
-				{images.map((src, index) => (
+				{displayImages.map((src, index) => (
 					<SwiperSlide key={index}>
 						<img
 							src={src}

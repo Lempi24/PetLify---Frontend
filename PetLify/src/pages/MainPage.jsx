@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import PetCard from '../components/ui/PetCard';
-import Burek from '../img/burek.jpg';
 import { Link, useNavigate } from 'react-router-dom';
 import LostDog from '../img/lost-dog.jpg';
 import FoundCat from '../img/found-cat.jpg';

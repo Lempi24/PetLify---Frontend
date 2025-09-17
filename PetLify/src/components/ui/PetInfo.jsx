@@ -20,7 +20,7 @@ const PetInfo = ({ pet, setSelectedPet }) => {
 							</svg>
 						</button>
 					</div>
-					<ImageCarousel />
+					<ImageCarousel images={pet.photo_url} />
 				</div>
 				<div className='flex flex-col py-8 border-b-2 border-accent gap-4'>
 					<div className='flex items-center gap-2'>
@@ -30,10 +30,6 @@ const PetInfo = ({ pet, setSelectedPet }) => {
 					<div className='flex items-center gap-2'>
 						<p className='bold text-xl'>Rasa:</p>
 						<p className='text-accent'>{pet.pet_breed}</p>
-					</div>
-					<div className='flex items-center gap-2'>
-						<p className='bold text-xl'>Płeć:</p>
-						<p className='text-accent'>Trzeba dodać xd</p>
 					</div>
 					<div className='flex items-center gap-2'>
 						<p className='bold text-xl'>Wiek:</p>
@@ -60,7 +56,7 @@ const PetInfo = ({ pet, setSelectedPet }) => {
 				</div>
 				<div className='flex flex-col py-8 space-y-2'>
 					<p className='font-bold text-xl mb-4'>Kontakt do właściciela:</p>
-					<p className='text-accent'>Jan Kowalski</p>
+					<p className='text-accent'>{pet.owner}</p>
 					<p className='text-accent'>Tel: 123-456-789</p>
 					<button className='bg-cta rounded-2xl py-1 px-3 ml-auto text-lg'>
 						Chat
