@@ -8,6 +8,7 @@ import { toast } from 'react-toastify';
 const Form = () => {
 	const navigate = useNavigate();
 	const [isLoging, setIsLoging] = useState(true);
+	const [loading, setLoading] = useState(false);
 	const {
 		register,
 		handleSubmit,
@@ -25,6 +26,7 @@ const Form = () => {
 
 	const submitCall = async (data) => {
 		if (isLoging) {
+			setLoading(true);
 			try {
 				const response = await axios.post(
 					import.meta.env.VITE_BACKEND_URL + '/login',
@@ -39,6 +41,7 @@ const Form = () => {
 					navigate('/main-page');
 				}
 			} catch (error) {
+				setLoading(false);
 				console.error(
 					'Login failed:',
 					error.response?.data?.message || 'An error occurred.'
@@ -73,7 +76,12 @@ const Form = () => {
 		'M256 160L256 224L384 224L384 160C384 124.7 355.3 96 320 96C284.7 96 256 124.7 256 160zM192 224L192 160C192 89.3 249.3 32 320 32C390.7 32 448 89.3 448 160L448 224C483.3 224 512 252.7 512 288L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 288C128 252.7 156.7 224 192 224z';
 
 	return (
-		<div className='w-full h-full flex flex-col items-center justify-center lg:flex-row'>
+		<div className='relative w-full h-full flex flex-col items-center justify-center lg:flex-row'>
+			{loading && (
+				<div className='absolute w-full h-full flex items-center justify-center bg-main-transparent z-100'>
+					<div class='w-10 h-10 border-4 border-accent border-t-cta rounded-full animate-spin'></div>
+				</div>
+			)}
 			<form
 				onSubmit={handleSubmit(submitCall)}
 				action=''

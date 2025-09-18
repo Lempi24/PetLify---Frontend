@@ -1,8 +1,17 @@
 import ImageCarousel from './ImageCarousel';
+import useAuth from '../../hooks/useAuth';
 const PetInfo = ({ pet, setSelectedPet }) => {
+	const loggedUser = useAuth();
+	const isOwner = loggedUser && loggedUser.email === pet.owner;
 	return (
-		<div className='fixed backdrop-blur-2xl h-screen w-screen z-10'>
-			<div className='fixed left-1/2 -translate-x-1/2 h-full w-full lg:w-1/2 bg-main  overflow-y-auto p-6'>
+		<div
+			className='fixed backdrop-blur-2xl h-screen w-screen z-10'
+			onClick={() => setSelectedPet(null)}
+		>
+			<div
+				className='fixed left-1/2 -translate-x-1/2 h-full w-full lg:w-1/2 bg-main  overflow-y-auto p-6'
+				onClick={(e) => e.stopPropagation()}
+			>
 				<div className='flex flex-col gap-8'>
 					<div className='flex items-center gap-4'>
 						<h2 className='font-bold text-4xl'>{pet.pet_name}</h2>
@@ -57,10 +66,12 @@ const PetInfo = ({ pet, setSelectedPet }) => {
 				<div className='flex flex-col py-8 space-y-2'>
 					<p className='font-bold text-xl mb-4'>Kontakt do właściciela:</p>
 					<p className='text-accent'>{pet.owner}</p>
-					<p className='text-accent'>Tel: 123-456-789</p>
-					<button className='bg-cta rounded-2xl py-1 px-3 ml-auto text-lg'>
-						Chat
-					</button>
+					<p className='text-accent'>Tel: {pet.phone}</p>
+					{!isOwner && (
+						<button className='bg-cta rounded-2xl py-1 px-3 ml-auto text-lg cursor-pointer'>
+							Chat
+						</button>
+					)}
 				</div>
 			</div>
 		</div>

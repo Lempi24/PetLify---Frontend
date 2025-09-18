@@ -140,7 +140,7 @@ const MainPage = () => {
 								to='/settings'
 								className='bg-cta w-9/10 rounded-2xl p-2 font-bold cursor-pointer text-center'
 							>
-								Ustawienia konta
+								Ustawienia
 							</Link>
 							<div className='w-9/10'>
 								<button

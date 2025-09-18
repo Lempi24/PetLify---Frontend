@@ -1,19 +1,25 @@
 const SettingsButtonContainer = ({
 	pMessage,
 	btnMessage,
+	subMessage,
 	negative,
 	btnType,
 	radioStateHandle,
 	isChecked,
+	onAction,
 }) => {
 	return (
 		<div className='bg-main flex items-center justify-between p-3 rounded-xl'>
-			<p className={`${negative ? 'text-negative' : ''} max-w-8/10`}>
-				{pMessage}
-			</p>
+			<div className='w-full'>
+				<p className={`${negative ? 'text-negative' : ''} max-w-8/10`}>
+					{pMessage}
+				</p>
+				<p className='text-sm text-accent'>{subMessage}</p>
+			</div>
 			{btnType === 'button' ? (
 				<button
 					type='button'
+					onClick={onAction}
 					className={`${
 						negative ? 'bg-negative' : 'bg-cta'
 					} py-2 px-6 rounded-xl cursor-pointer`}

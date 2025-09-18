@@ -6,6 +6,7 @@ import SettingsPage from './pages/SettingsPage';
 import ChatsPage from './pages/ChatsPage';
 import ReportsPage from './pages/ReportsPage';
 import CreateLostFormPage from './pages/CreateLostFormPage';
+
 function App() {
 	return (
 		<div className='w-screen h-screen overflow-x-hidden bg-secondary lg:bg-main text-text'>
@@ -20,7 +21,10 @@ function App() {
 				<Routes>
 					<Route path='/' element={<AuthPage />} />
 					<Route path='/main-page' element={<MainPage />} />
-					<Route path='/main-page/create-lost-form' element={<CreateLostFormPage />} />
+					<Route
+						path='/main-page/create-lost-form'
+						element={<CreateLostFormPage />}
+					/>
 					<Route path='/settings' element={<SettingsPage />} />
 					<Route path='/chats' element={<ChatsPage />} />
 					<Route path='/reports' element={<ReportsPage />} />

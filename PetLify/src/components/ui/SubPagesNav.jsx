@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
+import { useUser } from '../../context/UserContext';
 const SubPagesNav = ({ currentPath, isBurgerOpen }) => {
-	const loggedInUser = useAuth();
+	const { user } = useUser();
 	return (
 		<div
 			className={`lg:w-2/5 px-10 space-y-10 bg-main h-full w-full z-100 ${
@@ -30,19 +31,11 @@ const SubPagesNav = ({ currentPath, isBurgerOpen }) => {
 					</svg>
 				</button>
 				<div>
-					<p>{loggedInUser?.name ? 'Imię' : 'Użytkownik'}</p>
-					<p>{loggedInUser?.email}</p>
+					<p>{user?.first_name + ' ' + user?.surname || 'Użytkownik'}</p>
+					<p>{user?.email}</p>
 				</div>
 			</div>
 			<div className='flex flex-col gap-3'>
-				<Link
-					to='/settings'
-					className={`p-4 w-9/10 border-b-2 border-cta ${
-						currentPath === '/settings' ? 'bg-cta text-main' : ''
-					}`}
-				>
-					Ustawienia
-				</Link>
 				<Link
 					to='/chats'
 					className={`p-4 w-9/10 border-b-2 border-cta ${
@@ -58,6 +51,14 @@ const SubPagesNav = ({ currentPath, isBurgerOpen }) => {
 					}`}
 				>
 					Moje zgłoszenia
+				</Link>
+				<Link
+					to='/settings'
+					className={`p-4 w-9/10 border-b-2 border-cta ${
+						currentPath === '/settings' ? 'bg-cta text-main' : ''
+					}`}
+				>
+					Ustawienia
 				</Link>
 			</div>
 		</div>
