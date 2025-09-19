@@ -6,7 +6,10 @@ import FoundCat from '../img/found-cat.jpg';
 import PetInfo from '../components/ui/PetInfo';
 import axios from 'axios';
 import useAuth from '../hooks/useAuth';
+import { useUser } from '../context/UserContext';
 const MainPage = () => {
+	const { user } = useUser();
+	console.log(user);
 	const loggedInUser = useAuth();
 	const navigate = useNavigate();
 	const [activeTab, setActiveTab] = useState('lost');
@@ -15,6 +18,14 @@ const MainPage = () => {
 		formChoiceActive: false,
 		formActive: false,
 	});
+	const petSpeciesTypes = [
+		{ value: 'dog', label: 'Pies' },
+		{ value: 'cat', label: 'Kot' },
+		{ value: 'bird', label: 'Ptak' },
+		{ value: 'rodent', label: 'Gryzoń' },
+		{ value: 'reptile', label: 'Gad' },
+		{ value: 'other', label: 'Inne' },
+	];
 	const [selectedPet, setSelectedPet] = useState(null);
 	const [petsData, setPetsData] = useState([]);
 	const fetchPetsData = async (type) => {
@@ -33,7 +44,14 @@ const MainPage = () => {
 					},
 				}
 			);
-			console.log('Fetched pets data:', response.data);
+			console.log(response.data.pet_species);
+			response.data.map((pet) => {
+				if (pet.pet_species) {
+					pet.pet_species =
+						petSpeciesTypes.find((species) => species.value === pet.pet_species)
+							?.label || pet.pet_species;
+				}
+			});
 			setPetsData(response.data);
 		} catch (error) {
 			console.error('Error fetching pets data:', error);
@@ -119,7 +137,9 @@ const MainPage = () => {
 					>
 						<div>
 							<p className='text-xl font-bold'>
-								{loggedInUser?.name ? 'Imię' : 'Użytkownik'}
+								{user?.first_name
+									? user.first_name + ' ' + user.surname
+									: 'Użytkownik'}
 							</p>
 							<p className='text-sm'>{loggedInUser?.email}</p>
 						</div>

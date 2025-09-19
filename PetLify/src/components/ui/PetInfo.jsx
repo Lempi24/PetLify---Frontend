@@ -66,7 +66,7 @@ const PetInfo = ({ pet, setSelectedPet }) => {
 				<div className='flex flex-col py-8 space-y-2'>
 					<p className='font-bold text-xl mb-4'>Kontakt do właściciela:</p>
 					<p className='text-accent'>{pet.owner}</p>
-					<p className='text-accent'>Tel: {pet.phone}</p>
+					<p className='text-accent'>Tel: {pet.phone || 'Nie podano'}</p>
 					{!isOwner && (
 						<button className='bg-cta rounded-2xl py-1 px-3 ml-auto text-lg cursor-pointer'>
 							Chat

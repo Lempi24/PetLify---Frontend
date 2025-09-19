@@ -1,33 +1,20 @@
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import SubPagesNav from '../components/ui/SubPagesNav';
 import dogo from '../img/burek.jpg';
 import SettingsButtonContainer from '../components/ui/SettingsButtonContainer';
 import BurgerMenu from '../components/ui/BurgerMenu';
-import FormInput from '../components/ui/FormInput';
-import axios from 'axios';
-import { toast } from 'react-toastify';
 import { useUser } from '../context/UserContext';
-
+import SettingsPanel from '../components/ui/SettingsPanel';
+import { set } from 'react-hook-form';
 const SettingsPage = () => {
-	const { user, setUser, fetchUser } = useUser();
+	const { user, fetchUser } = useUser();
 	console.log('Aktualny stan obiektu user:', user);
-	const {
-		register,
-		handleSubmit,
-		formState: { errors },
-		reset,
-	} = useForm({ shouldUnregister: true, mode: 'onChange' });
-	const navigate = useNavigate();
-	const userIconPath =
-		'M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z';
-	const phoneIconPath =
-		'M164.9 24.6c-7.7-18.6-28-28.5-47.4-23.2l-88 24C12.1 30.2 0 46 0 64C0 311.4 200.6 512 448 512c18 0 33.8-12.1 38.6-29.5l24-88c5.3-19.4-4.6-39.7-23.2-47.4l-96-40c-16.3-6.8-35.2-2.1-46.3 11.6L304.7 368C234.3 334.7 177.3 277.7 144 207.3L193.3 167c13.7-11.2 18.4-30 11.6-46.3l-40-96z';
+
 	const location = useLocation();
 	const currentPath = location.pathname;
 	const [isBurgerOpen, setIsBurgerOpen] = useState(false);
-	const [isEditProfileMode, setIsEditProfileMode] = useState(false);
+	const [activePanel, setActivePanel] = useState(null);
 	const [settings, setSettings] = useState({
 		chatNotifications: false,
 		disappearanceNotifications: false,
@@ -38,39 +25,7 @@ const SettingsPage = () => {
 			[settingKey]: !prevSettings[settingKey],
 		}));
 	};
-	const submitCall = async (data) => {
-		try {
-			const token = localStorage.getItem('token');
-			if (!token) {
-				navigate('/');
-				return;
-			}
-			await axios.put(
-				import.meta.env.VITE_BACKEND_URL + '/settings/update-user-info',
-				{
-					email: user.email,
-					name: data.userName,
-					surname: data.userSurname,
-					phoneNumber: data.userPhoneNumber,
-				},
-				{
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				}
-			);
-			await fetchUser();
-			reset();
-			setIsEditProfileMode(false);
-			toast.success('Dane zostały zaktualizowane.');
-		} catch (error) {
-			console.error(
-				'Update failed:',
-				error.response?.data?.message || 'An error occurred.'
-			);
-			toast.error('Aktualizacja danych nie powiodła się. Spróbuj ponownie.');
-		}
-	};
+
 	return (
 		<div className='relative flex'>
 			<SubPagesNav currentPath={currentPath} isBurgerOpen={isBurgerOpen} />
@@ -105,78 +60,47 @@ const SettingsPage = () => {
 				<div>
 					<p className='text-cta'>Konto</p>
 					<div className='mt-3 space-y-1'>
-						{isEditProfileMode && (
-							<form
-								onSubmit={handleSubmit(submitCall)}
-								className='bg-main p-3 rounded-xl space-y-3'
-							>
-								<p className='text-lg'>Edytuj dane osobowe</p>
-								<div className='space-y-3'>
-									<FormInput
-										placeholder={'Imię'}
-										icon={userIconPath}
-										{...register('userName')}
-									/>
-									<FormInput
-										placeholder={'Nazwisko'}
-										icon={userIconPath}
-										{...register('userSurname')}
-									/>
-									<FormInput
-										placeholder={'Numer telefonu'}
-										icon={phoneIconPath}
-										error={errors.userPhoneNumber}
-										{...register('userPhoneNumber', {
-											pattern: {
-												value: /^[0-9]{9}$/i,
-												message: 'Nieprawidłowy numer telefonu (9 cyfr)',
-											},
-										})}
-									/>
-									{errors.userPhoneNumber && (
-										<p className='text-negative text-sm -mt-2 ml-3'>
-											{errors.userPhoneNumber.message}
-										</p>
-									)}
-								</div>
-								<div className='flex justify-end gap-3'>
-									<button
-										className='text-secondary cursor-pointer'
-										onClick={() => setIsEditProfileMode((prev) => !prev)}
-									>
-										Anuluj
-									</button>
-									<button
-										className='bg-cta
-									py-2 px-6 rounded-xl cursor-pointer'
-									>
-										Zapisz
-									</button>
-								</div>
-							</form>
+						{activePanel === 'editProfile' && (
+							<SettingsPanel
+								type={'editProfile'}
+								onClose={() => setActivePanel(null)}
+							/>
+						)}
+						{activePanel === 'editPassword' && (
+							<SettingsPanel
+								type={'editPassword'}
+								onClose={() => setActivePanel(null)}
+							/>
 						)}
 
-						<SettingsButtonContainer
-							pMessage={user?.first_name + ' ' + user?.surname || 'Brak danych'}
-							subMessage={user?.phone || 'Brak numeru telefonu'}
-							btnMessage={'Zmień'}
-							btnType={'button'}
-							negative={false}
-							onAction={() => setIsEditProfileMode((prev) => !prev)}
-						/>
-						<SettingsButtonContainer
-							pMessage={'Zmień hasło'}
-							btnMessage={'Zmień'}
-							btnType={'button'}
-							negative={false}
-							onAction={() => setIsEditPasswordMode((prev) => !prev)}
-						/>
-						<SettingsButtonContainer
-							pMessage={'Usuń konto'}
-							btnMessage={'Usuń'}
-							btnType={'button'}
-							negative={true}
-						/>
+						{!activePanel && (
+							<>
+								<SettingsButtonContainer
+									pMessage={
+										user?.first_name + ' ' + user?.surname || 'Brak danych'
+									}
+									subMessage={user?.phone || 'Brak numeru telefonu'}
+									btnMessage={'Zmień'}
+									btnType={'button'}
+									negative={false}
+									onAction={() => setActivePanel('editProfile')}
+								/>
+
+								<SettingsButtonContainer
+									pMessage={'Zmień hasło'}
+									btnMessage={'Zmień'}
+									btnType={'button'}
+									negative={false}
+									onAction={() => setActivePanel('editPassword')}
+								/>
+								<SettingsButtonContainer
+									pMessage={'Usuń konto'}
+									btnMessage={'Usuń'}
+									btnType={'button'}
+									negative={true}
+								/>
+							</>
+						)}
 					</div>
 				</div>
 				<div>
