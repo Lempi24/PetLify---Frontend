@@ -244,7 +244,16 @@ const MainPage = () => {
 								</button>
 							</div>
 							<div className='relative p-1 w-1/2'>
-								<button className='group h-100 w-full overflow-hidden cursor-pointer'>
+								<button 
+									className='group h-100 w-full overflow-hidden cursor-pointer'
+									onClick={() => {
+										setHandlePopUpState({
+											formChoiceActive: false,
+											formActive: false,
+										});
+										navigate('/main-page/create-found-form')
+									}}
+								>
 									<img
 										src={FoundCat}
 										alt='Relaxed cat sleeping on the couch'
