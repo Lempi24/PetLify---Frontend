@@ -1,11 +1,12 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
-import AuthPage from './pages/AuthPage';
-import MainPage from './pages/MainPage';
-import SettingsPage from './pages/SettingsPage';
-import ChatsPage from './pages/ChatsPage';
-import ReportsPage from './pages/ReportsPage';
-import CreateLostFormPage from './pages/CreateLostFormPage';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { ToastContainer } from 'react-toastify'
+import AuthPage from './pages/AuthPage'
+import MainPage from './pages/MainPage'
+import SettingsPage from './pages/SettingsPage'
+import ChatsPage from './pages/ChatsPage'
+import ReportsPage from './pages/ReportsPage'
+import CreateLostFormPage from './pages/CreateLostFormPage'
+import CreateFoundFormPage from './pages/CreateFoundFormPage'
 
 function App() {
 	return (
@@ -21,10 +22,8 @@ function App() {
 				<Routes>
 					<Route path='/' element={<AuthPage />} />
 					<Route path='/main-page' element={<MainPage />} />
-					<Route
-						path='/main-page/create-lost-form'
-						element={<CreateLostFormPage />}
-					/>
+					<Route path='/main-page/create-lost-form' element={<CreateLostFormPage />}/>
+					<Route path='/main-page/create-found-form' element={<CreateFoundFormPage />}/>
 					<Route path='/settings' element={<SettingsPage />} />
 					<Route path='/chats' element={<ChatsPage />} />
 					<Route path='/reports' element={<ReportsPage />} />

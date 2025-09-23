@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { LoadScript, Autocomplete } from '@react-google-maps/api';
 
 const FoundForm = () => {
+	const MAX_PHOTOS = 5
 	const navigate = useNavigate();
 	const {
 		register,
@@ -41,30 +42,79 @@ const FoundForm = () => {
             shouldValidate: true,
             shouldDirty: true,
             });
+			if(place.geometry && place.geometry.location){
+				const lat = place.geometry.location.lat();
+				const lng = place.geometry.location.lng();
+
+				setValue('latitude', lat);
+				setValue('longitude', lng);
+
+				setSelectedPosition({ lat, lng });
+			}
         }
     };
 
 	const [loading, setLoading] = useState(false);
-	const [preview, setPreview] = useState(null);
+	const [previews, setPreviews] = useState([]);
+	const [selectedPosition, setSelectedPosition] = useState(null);
 
-	const photoFile = watch('photo');
+	const photoFiles = watch('photos');
 
 	useEffect(() => {
-		if (photoFile && photoFile.length > 0) {
-			const file = photoFile[0];
-			const objectUrl = URL.createObjectURL(file);
-			setPreview(objectUrl);
+		if (photoFiles && photoFiles.length > 0) {
+			const objectUrls = Array.from(photoFiles).map((file) =>
+				URL.createObjectURL(file)
+			);
+			setPreviews(objectUrls);
 
-			return () => URL.revokeObjectURL(objectUrl);
+			return () => {
+				objectUrls.forEach((url) => URL.revokeObjectURL(url));
+			};
 		} else {
-			setPreview(null);
+			setPreviews([]);
 		}
-	}, [photoFile]);
+	}, [photoFiles]);
+	const removePhoto = (indexToRemove) => {
+		const updatedFiles = Array.from(photoFiles).filter(
+			(_, index) => index !== indexToRemove
+		);
+
+		const dataTransfer = new DataTransfer();
+		updatedFiles.forEach((file) => dataTransfer.items.add(file));
+
+		setValue('photos', dataTransfer.files, { shouldValidate: true });
+	};
+	const handleFileChange = (event) => {
+		const currentFiles = photoFiles ? Array.from(photoFiles) : [];
+		const newFiles = Array.from(event.target.files);
+
+		if (currentFiles.length + newFiles.length > MAX_PHOTOS) {
+			toast.error(`Możesz dodać maksymalnie ${MAX_PHOTOS} zdjęć.`);
+			event.target.value = '';
+			return;
+		}
+
+		const combinedFiles = [...currentFiles, ...newFiles];
+
+		const dataTransfer = new DataTransfer();
+		combinedFiles.forEach((file) => dataTransfer.items.add(file));
+
+		setValue('photos', dataTransfer.files, { shouldValidate: true });
+	};
 
 	const onSubmit = async (data) => {
 		console.log('onSubmit został wywołany!');
 		const token = localStorage.getItem('token');
 		console.log('Token:', token);
+
+		const foundPlace = data.foundPlace || '';
+		const foundPlaceSplit = foundPlace.split(',');
+		data.foundStreet = foundPlaceSplit[0]?.trim() || '';
+		data.foundCity = foundPlaceSplit[1]?.trim().replace(/^\d{2}-\d{3}\s*/, '') || '';
+
+		const latitude = data.latitude || '';
+		const longitude = data.longitude || '';
+		data.foundCoordinates = longitude && latitude ? `${longitude},${latitude}` : '';
 
 		console.log('Form data przed wysyłką:', data);
 
@@ -73,8 +123,10 @@ const FoundForm = () => {
 			const formData = new FormData();
 
 			for (const key in data) {
-				if (key === 'photo' && data.photo?.length > 0) {
-					formData.append('photo', data.photo[0]);
+				if (key === 'photos' && data.photos?.length > 0) {
+					Array.from(data.photos).forEach((file) => {
+						formData.append('photos', file);
+					});
 				} else {
 					formData.append(key, data[key]);
 				}
@@ -222,26 +274,31 @@ const FoundForm = () => {
                     <div>
                         <LoadScript
 							googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
-                            libraries={['places']}
+							libraries={['places']}
 						>
-                            <label className='block text-sm font-medium mb-1'>
-                                Podaj miejsce zaginięcia
-                            </label>
-                            <Autocomplete
-                                onLoad={(autocomplete) => {
-                                autocompleteRef.current = autocomplete;
-                                }}
-                                onPlaceChanged={onChosenPlace}
-                            >
-                                <input
-                                    type='text'
-                                    placeholder='Wpisz adres...'
-                                    className='w-full p-2 rounded-md bg-secondary border border-cta'
-                                    onChange={(e) => setValue('foundPlace', e.target.value)}
-                                    name='foundPlace'
-                                />
-                            </Autocomplete>
-                        </LoadScript>
+							<label className='block text-sm font-medium mb-1'>
+								Podaj miejsce odnalezienia
+							</label>
+							<Autocomplete
+								options={{
+									types:['address'],
+									componentRestrictions: { country: 'pl'},
+								}}
+								onLoad={(autocomplete) => {
+									autocompleteRef.current = autocomplete;
+								}}
+								onPlaceChanged={onChosenPlace}
+							>
+								<input
+									type='text'
+									placeholder='Wpisz adres...'
+									className='w-full p-2 rounded-md bg-secondary border border-cta'
+									name='foundPlace'
+								/>
+							</Autocomplete>
+						</LoadScript>
+						<input type="hidden" {...register('latitude')} />
+						<input type="hidden" {...register('longitude')} />
 					</div>
 
 					<div>
@@ -258,15 +315,25 @@ const FoundForm = () => {
 
 					<div>
 						<label className='block text-sm font-medium mb-1'>
-							Zdjęcie zwierzęcia
+							Zdjęcie zwierzęcia (min. 1, max. {MAX_PHOTOS})
 						</label>
 
 						<input
 							type='file'
 							id='photo-upload'
-							{...register('photo', { required: 'Dodaj zdjęcie zwierzęcia' })}
+							{...register('photos', {
+								validate: {
+									required: (files) =>
+										files.length > 0 || 'Dodaj przynajmniej jedno zdjęcie.',
+									maxAmount: (files) =>
+										files.length <= MAX_PHOTOS ||
+										`Możesz dodać maksymalnie ${MAX_PHOTOS} zdjęć.`,
+								},
+							})}
 							accept='image/*'
+							multiple
 							className='hidden'
+							onChange={handleFileChange}
 						/>
 
 						<label
@@ -276,21 +343,32 @@ const FoundForm = () => {
 							Wybierz zdjęcie
 						</label>
 
-						{errors.photo && (
+						{errors.photos && (
 							<p className='text-negative text-sm mt-1'>
-								{errors.photo.message}
+								{errors.photos.message}
 							</p>
 						)}
 					</div>
 
-					{preview && (
-						<div className='mt-2'>
-							<img
-								src={preview}
-								alt='Podgląd zdjęcia'
-								style={{ width: 300, height: 300, objectFit: 'cover' }}
-								className='rounded-md border border-cta'
-							/>
+					{previews.length > 0 && (
+						<div className='mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4'>
+							{previews.map((src, index) => (
+								<div key={index} className='relative group'>
+									<img
+										src={src}
+										alt={`Podgląd zdjęcia ${index + 1}`}
+										className='w-full h-24 object-cover rounded-md border border-cta'
+									/>
+									<button
+										type='button'
+										onClick={() => removePhoto(index)}
+										className='absolute top-1 right-1 bg-negative text-white rounded-full w-6 h-6 flex items-center justify-center text-sm cursor-pointer'
+										aria-label='Usuń zdjęcie'
+									>
+										X
+									</button>
+								</div>
+							))}
 						</div>
 					)}
 
