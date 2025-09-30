@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { LoadScript, Autocomplete } from '@react-google-maps/api';
 
 const FoundForm = () => {
-	const MAX_PHOTOS = 5
+	const MAX_PHOTOS = 5;
 	const navigate = useNavigate();
 	const {
 		register,
@@ -15,7 +15,7 @@ const FoundForm = () => {
 		formState: { errors },
 		reset,
 		watch,
-        setValue,
+		setValue,
 	} = useForm({ mode: 'onChange' });
 
 	const petSpeciesTypes = [
@@ -33,16 +33,16 @@ const FoundForm = () => {
 		{ label: 'Duży', value: 'large' },
 	];
 
-    const autocompleteRef = useRef(null);
+	const autocompleteRef = useRef(null);
 
-    const onChosenPlace = () => {
-        const place = autocompleteRef.current.getPlace();
-        if (place && place.formatted_address) {
-            setValue('foundPlace', place.formatted_address, {
-            shouldValidate: true,
-            shouldDirty: true,
-            });
-			if(place.geometry && place.geometry.location){
+	const onChosenPlace = () => {
+		const place = autocompleteRef.current.getPlace();
+		if (place && place.formatted_address) {
+			setValue('foundPlace', place.formatted_address, {
+				shouldValidate: true,
+				shouldDirty: true,
+			});
+			if (place.geometry && place.geometry.location) {
 				const lat = place.geometry.location.lat();
 				const lng = place.geometry.location.lng();
 
@@ -51,8 +51,8 @@ const FoundForm = () => {
 
 				setSelectedPosition({ lat, lng });
 			}
-        }
-    };
+		}
+	};
 
 	const [loading, setLoading] = useState(false);
 	const [previews, setPreviews] = useState([]);
@@ -110,11 +110,13 @@ const FoundForm = () => {
 		const foundPlace = data.foundPlace || '';
 		const foundPlaceSplit = foundPlace.split(',');
 		data.foundStreet = foundPlaceSplit[0]?.trim() || '';
-		data.foundCity = foundPlaceSplit[1]?.trim().replace(/^\d{2}-\d{3}\s*/, '') || '';
+		data.foundCity =
+			foundPlaceSplit[1]?.trim().replace(/^\d{2}-\d{3}\s*/, '') || '';
 
 		const latitude = data.latitude || '';
 		const longitude = data.longitude || '';
-		data.foundCoordinates = longitude && latitude ? `${longitude},${latitude}` : '';
+		data.foundCoordinates =
+			longitude && latitude ? `${longitude},${latitude}` : '';
 
 		console.log('Form data przed wysyłką:', data);
 
@@ -155,7 +157,7 @@ const FoundForm = () => {
 	};
 
 	return (
-		<div className='flex justify-center items-start p-4 min-h-screen'>
+		<div className='flex justify-center items-start p-4 min-h-screen lg:w-1/2'>
 			<div className='w-full max-w-xl space-y-4'>
 				<div className='relative flex justify-center items-center mb-4 p-2g'>
 					<div className='absolute left-0'>
@@ -266,13 +268,15 @@ const FoundForm = () => {
 						<FormInput
 							type='date'
 							placeholder='Data odnalezienia'
-							{...register('foundDate', { required: 'Podaj datę odnalezienia' })}
+							{...register('foundDate', {
+								required: 'Podaj datę odnalezienia',
+							})}
 							error={errors.foundDate}
 						/>
 					</div>
 
-                    <div>
-                        <LoadScript
+					<div>
+						<LoadScript
 							googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
 							libraries={['places']}
 						>
@@ -281,8 +285,8 @@ const FoundForm = () => {
 							</label>
 							<Autocomplete
 								options={{
-									types:['address'],
-									componentRestrictions: { country: 'pl'},
+									types: ['address'],
+									componentRestrictions: { country: 'pl' },
 								}}
 								onLoad={(autocomplete) => {
 									autocompleteRef.current = autocomplete;
@@ -297,14 +301,12 @@ const FoundForm = () => {
 								/>
 							</Autocomplete>
 						</LoadScript>
-						<input type="hidden" {...register('latitude')} />
-						<input type="hidden" {...register('longitude')} />
+						<input type='hidden' {...register('latitude')} />
+						<input type='hidden' {...register('longitude')} />
 					</div>
 
 					<div>
-						<label className='block text-sm font-medium mb-1'>
-							Opis
-						</label>
+						<label className='block text-sm font-medium mb-1'>Opis</label>
 						<textarea
 							{...register('description')}
 							placeholder='Opisz dokładnie zwierzę, jego cechy charakterystyczne, ewentualną obrożę, numer chipa, typowe zachowania...'
