@@ -20,6 +20,7 @@ const SettingsPage = () => {
 		chatNotifications: false,
 		disappearanceNotifications: false,
 	});
+	const [defaultLocation, setDefaultLocation] = useState(null);
 	const [initialSettings, setInitialSettings] = useState(null);
 	const isChanged =
 		initialSettings &&
@@ -73,10 +74,12 @@ const SettingsPage = () => {
 				}
 			);
 			const data = response.data;
+			console.log('Pobrane ustawienia użytkownika:', data);
 			setSettings({
 				chatNotifications: data.notify_new_chats,
 				disappearanceNotifications: data.notify_missing,
 			});
+			setDefaultLocation(data.default_location || null);
 			setInitialSettings({
 				chatNotifications: data.notify_new_chats,
 				disappearanceNotifications: data.notify_missing,
@@ -133,7 +136,7 @@ const SettingsPage = () => {
 	return (
 		<div className='relative flex'>
 			<SubPagesNav currentPath={currentPath} isBurgerOpen={isBurgerOpen} />
-			<div className='flex flex-col gap-10 px-5 w-full h-screen bg-secondary py-5'>
+			<div className='flex flex-col gap-10 px-5 w-full h-screen bg-secondary py-5 overflow-y-auto'>
 				<div className='flex items-center'>
 					<h2 className='text-2xl border-b-2 w-full py-5'>Ustawienia</h2>
 					<BurgerMenu
@@ -177,7 +180,7 @@ const SettingsPage = () => {
 							/>
 						)}
 
-						{!activePanel && (
+						{(!activePanel || activePanel === 'editLocation') && (
 							<>
 								<SettingsButtonContainer
 									pMessage={
@@ -245,11 +248,19 @@ const SettingsPage = () => {
 					<p className='text-cta'>Aplikacja</p>
 					<div className='mt-3 space-y-1'>
 						<SettingsButtonContainer
-							pMessage={'Domyślna lokalizacja'}
+							pMessage={`Domyślna lokalizacja: ${user?.city || 'Brak'}`}
 							btnMessage={'Ustaw'}
 							btnType={'button'}
 							negative={false}
+							onAction={() => setActivePanel('editLocation')}
 						/>
+
+						{activePanel === 'editLocation' && (
+							<SettingsPanel
+								type={'editLocation'}
+								onClose={() => setActivePanel(null)}
+							/>
+						)}
 					</div>
 				</div>
 			</div>
