@@ -7,6 +7,7 @@ import ChatsPage from './pages/ChatsPage'
 import ReportsPage from './pages/ReportsPage'
 import CreateLostFormPage from './pages/CreateLostFormPage'
 import CreateFoundFormPage from './pages/CreateFoundFormPage'
+import AdminPanel from './pages/AdminPanel'
 
 function App() {
 	return (
@@ -27,6 +28,7 @@ function App() {
 					<Route path='/settings' element={<SettingsPage />} />
 					<Route path='/chats' element={<ChatsPage />} />
 					<Route path='/reports' element={<ReportsPage />} />
+					<Route path='/admin-panel' element={<AdminPanel />} />
 				</Routes>
 			</Router>
 		</div>

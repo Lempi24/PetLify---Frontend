@@ -10,7 +10,7 @@ import { useUser } from '../context/UserContext';
 const MainPage = () => {
 	const { user } = useUser();
 	console.log(user);
-	const loggedInUser = useAuth();
+	const { user: loggedInUser } = useAuth();
 	const navigate = useNavigate();
 	const [activeTab, setActiveTab] = useState('lost');
 	const [userPanelActive, setUserPanelActive] = useState(false);
@@ -162,6 +162,14 @@ const MainPage = () => {
 							>
 								Ustawienia
 							</Link>
+							{loggedInUser?.role === 'admin' && (
+								<Link
+									to='/admin-page'
+									className='bg-cta w-9/10 rounded-2xl p-2 font-bold cursor-pointer text-center'
+								>
+									Panel administracyjny
+								</Link>
+							)}
 							<div className='w-9/10'>
 								<button
 									className='flex items-center cursor-pointer gap-3'

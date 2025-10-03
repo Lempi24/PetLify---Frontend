@@ -16,7 +16,6 @@ const LostForm = () => {
 		reset,
 		watch,
 		setValue,
-		trigger,
 	} = useForm({ mode: 'onChange' });
 
 	const petSpeciesTypes = [

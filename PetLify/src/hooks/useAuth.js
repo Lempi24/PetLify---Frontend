@@ -9,8 +9,10 @@ const useAuth = () => {
 			const token = localStorage.getItem('token');
 			if (token) {
 				const decodedToken = jwtDecode(token);
+				console.log('Decoded token:', decodedToken);
 				setUser({
 					email: decodedToken.email,
+					role: decodedToken.role,
 				});
 			}
 		} catch (error) {
@@ -18,6 +20,6 @@ const useAuth = () => {
 			setUser(null);
 		}
 	}, []);
-	return user;
+	return { user };
 };
 export default useAuth;
