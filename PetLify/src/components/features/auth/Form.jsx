@@ -39,7 +39,7 @@ const Form = () => {
 				);
 				if (response.data.token) {
 					localStorage.setItem('token', response.data.token);
-					await fetchUser();
+					window.dispatchEvent(new Event('tokenChange'));
 					reset();
 					navigate('/main-page');
 				}

@@ -20,9 +20,14 @@ export const UserProvider = ({ children }) => {
 			}
 		);
 		setUser(data);
+		console.log('Ładuję teraz' + loggedInUser.email);
 	};
 
 	useEffect(() => {
+		if (!loggedInUser) {
+			setUser(null);
+			return;
+		}
 		fetchUser();
 	}, [loggedInUser]);
 
