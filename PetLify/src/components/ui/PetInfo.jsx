@@ -5,7 +5,7 @@ const PetInfo = ({ pet, setSelectedPet }) => {
 	const isOwner = loggedUser && loggedUser.email === pet.owner;
 	return (
 		<div
-			className='fixed backdrop-blur-2xl h-screen w-screen z-10'
+			className='fixed backdrop-blur-2xl h-screen w-screen z-10000'
 			onClick={() => setSelectedPet(null)}
 		>
 			<div
