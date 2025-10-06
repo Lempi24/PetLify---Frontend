@@ -8,7 +8,7 @@ import axios from 'axios';
 import useAuth from '../hooks/useAuth';
 import { useUser } from '../context/UserContext';
 const MainPage = () => {
-	const { user } = useUser();
+	const { user, setUser } = useUser();
 	console.log(user);
 	const loggedInUser = useAuth();
 	const navigate = useNavigate();
@@ -63,6 +63,7 @@ const MainPage = () => {
 
 	const handleLogOut = () => {
 		localStorage.removeItem('token');
+		window.dispatchEvent(new Event('tokenChange'));
 		navigate('/');
 	};
 	const handlePetInfo = (pet) => {
