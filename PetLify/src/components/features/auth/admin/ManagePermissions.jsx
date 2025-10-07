@@ -9,7 +9,6 @@ const ManagePermissions = () => {
                     Zarządzaj uprawnieniami użytkowników
                 </h1>
                 <p className="text-md text-gray-600 mb-10">Tutaj możesz nadawać lub odbierać uprawnienia użytkownikom.</p>
-                {/* Dodaj tutaj komponenty i logikę do zarządzania uprawnieniami */}
             </div>
         </>
     );
