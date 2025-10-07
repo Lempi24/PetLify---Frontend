@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import AdminOptionsNav from "../components/ui/AdminOptionsNav"; 
@@ -23,8 +22,7 @@ const AdminPage = () => {
 			<p className="text-md text-gray-600 mb-10">Zalogowano jako: {user.email}</p>
 		</div>
 	</div>
-);
-
+	);
 };
 
 export default AdminPage;

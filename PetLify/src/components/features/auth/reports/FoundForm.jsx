@@ -9,6 +9,7 @@ import { LoadScript, Autocomplete } from '@react-google-maps/api';
 const FoundForm = () => {
 	const MAX_PHOTOS = 5
 	const navigate = useNavigate();
+	
 	const {
 		register,
 		handleSubmit,
@@ -56,7 +57,7 @@ const FoundForm = () => {
 
 	const [loading, setLoading] = useState(false);
 	const [previews, setPreviews] = useState([]);
-	const [selectedPosition, setSelectedPosition] = useState(null);
+	const [setSelectedPosition] = useState(null);
 
 	const photoFiles = watch('photos');
 
