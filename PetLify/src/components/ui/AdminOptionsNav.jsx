@@ -7,12 +7,12 @@ const AdminOptionsNav = () => {
   return (
     <nav className="bg-orange-400 w-full px-6 py-3 shadow-md flex justify-center gap-6 sticky top-0 z-50">
       <Link
-        to="/admin-panel"
+        to="/main-page"
         className={`px-4 py-2 rounded-2xl font-semibold cursor-pointer transition ${
-          currentPath === '/admin-panel' ? 'bg-orange-500 text-white' : 'text-white hover:bg-orange-500'
+          currentPath === '/main-page' ? 'bg-orange-500 text-white' : 'text-white hover:bg-orange-500'
         }`}
       >
-        Home
+        Strona główna
       </Link>
       <Link
         to="/admin-panel/manage-permissions"
@@ -23,20 +23,20 @@ const AdminOptionsNav = () => {
         Nadaj uprawnienia
       </Link>
       <Link
-        to="/admin-panel/approve-lost-reports"
+        to="/admin-panel/manage-lost-reports"
         className={`px-4 py-2 rounded-2xl font-semibold cursor-pointer transition ${
-          currentPath === '/admin-panel/approve-lost-reports' ? 'bg-orange-500 text-white' : 'text-white hover:bg-orange-500'
+          currentPath === '/admin-panel/manage-lost-reports' ? 'bg-orange-500 text-white' : 'text-white hover:bg-orange-500'
         }`}
       >
-        Zatwierdź zgłoszenia zaginięcia
+        Zarządzaj zgłoszeniami zaginięcia
       </Link>
       <Link
-        to="/admin-panel/approve-found-reports"
+        to="/admin-panel/manage-found-reports"
         className={`px-4 py-2 rounded-2xl font-semibold cursor-pointer transition ${
-          currentPath === '/admin-panel/approve-found-reports' ? 'bg-orange-500 text-white' : 'text-white hover:bg-orange-500'
+          currentPath === '/admin-panel/manage-found-reports' ? 'bg-orange-500 text-white' : 'text-white hover:bg-orange-500'
         }`}
       >
-        Zatwierdź zgłoszenia odnalezienia
+        Zarządzaj zgłoszeniami odnalezienia
       </Link>
     </nav>
   );
