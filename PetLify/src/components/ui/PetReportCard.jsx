@@ -1,4 +1,11 @@
-const PetReportCard = ({ image, petName, petStatus, reportDate, onAction }) => {
+const PetReportCard = ({
+	image,
+	petName,
+	petStatus,
+	reportDate,
+	onView,
+	onEdit,
+}) => {
 	return (
 		<div className='bg-main rounded-xl overflow-hidden border-cta border-2 max-h-[450px]'>
 			<img src={image} alt='Kicik' className='w-full h-64 object-cover' />
@@ -19,14 +26,13 @@ const PetReportCard = ({ image, petName, petStatus, reportDate, onAction }) => {
 				</div>
 				<p>Zgłoszono: {reportDate}</p>
 			</div>
-			<div
-				onClick={onAction}
-				className='flex items-center justify-around p-4 gap-4'
-			>
-				<button className='text-cta cursor-pointer p-2'>
+			<div className='flex items-center justify-around p-4 gap-4'>
+				<button onClick={onView} className='text-cta cursor-pointer p-2'>
 					Zobacz szczegóły
 				</button>
-				<button className='text-cta cursor-pointer p-2'>Edytuj</button>
+				<button onClick={onEdit} className='text-cta cursor-pointer p-2'>
+					Edytuj
+				</button>
 			</div>
 		</div>
 	);

@@ -3,18 +3,49 @@ import { useEffect, useState } from 'react';
 import ImageCarousel from './ImageCarousel';
 import useAuth from '../../hooks/useAuth';
 import ChatModal from '../chat/ChatModal';
+
+// NOWY czat – backend (Socket.IO + REST)
 import { ensureThread, fetchMessages, sendMessageHttp } from '../../services/chatApi';
 import { getSocket } from '../../lib/socket';
 
-const PetInfo = ({ pet, setSelectedPet }) => {
+// Edycja i nawigacja
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+// Proste pole edytowalne używane w trybie "edit"
+const EditableField = ({
+  value,
+  onChange,
+  mode,
+  type = 'text',
+  className = '',
+}) =>
+  mode === 'edit' ? (
+    <input
+      type={type}
+      value={value ?? ''}
+      onChange={(e) => onChange(e.target.value)}
+      className="border rounded px-2 py-1 text-accent"
+    />
+  ) : (
+    <p className={`text-accent ${className}`}>{value}</p>
+  );
+
+const PetInfo = ({ pet: initialPet, setSelectedPet, mode = 'view' }) => {
+  const navigate = useNavigate();
   const loggedUser = useAuth();
   const me = loggedUser?.email;
 
+  // Dane zwierzaka (obsługa trybu edycji)
+  const [pet, setPet] = useState(initialPet);
+  const isOwner = me && me === initialPet?.owner;
+
+  // --- CZAT (backend) ---
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [thread, setThread] = useState(null);
   const [messages, setMessages] = useState([]);
 
-  // gdy mamy już wątek – dołącz do pokoju i włącz live-update
+  // Dołącz do pokoju po ustaleniu wątku i włącz live-update
   useEffect(() => {
     if (!thread) return;
     const socket = getSocket();
@@ -24,6 +55,8 @@ const PetInfo = ({ pet, setSelectedPet }) => {
       if (msg.threadId !== thread.id) return;
       setMessages((prev) => [...prev, msg]);
     };
+
+    // najpierw zdejmij ewentualny poprzedni handler, potem nałóż nowy
     socket.off('chat:newMessage', onNew);
     socket.on('chat:newMessage', onNew);
 
@@ -33,7 +66,6 @@ const PetInfo = ({ pet, setSelectedPet }) => {
   }, [thread]);
 
   function openChatWindow() {
-    // Nie tworzymy wątku tutaj – tylko otwieramy okno.
     setIsChatOpen(true);
     setThread(null);
     setMessages([]);
@@ -58,11 +90,14 @@ const PetInfo = ({ pet, setSelectedPet }) => {
         partnerEmail: pet?.owner,
       });
       setThread(t);
-      // jeśli serwer zwraca istniejący wątek, pobierz dotychczasowe wiadomości
+
+      // pobierz historię (jeśli wątek już istniał)
       try {
         const history = await fetchMessages(t.id);
-        setMessages(history);
-      } catch (_) {}
+        setMessages(history || []);
+      } catch (_) {
+        /* no-op */
+      }
       // dołączenie do pokoju zrobi useEffect
     }
 
@@ -70,12 +105,29 @@ const PetInfo = ({ pet, setSelectedPet }) => {
     if (socket.connected) {
       socket.emit('chat:send', { threadId: t.id, text, attachments });
     } else {
+      // fallback HTTP gdy socket niepołączony
       const msg = await sendMessageHttp(t.id, { text, attachments });
       setMessages((prev) => [...prev, msg]);
     }
   }
 
-  const isOwner = me && me === pet?.owner;
+  // Zapis edycji
+  const handleSave = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/');
+      return;
+    }
+    try {
+      await axios.put(
+        import.meta.env.VITE_BACKEND_URL + `/user-reports/edit-report`,
+        pet,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (error) {
+      console.error('Błąd zapisu: ', error);
+    }
+  };
 
   return (
     <div
@@ -88,7 +140,12 @@ const PetInfo = ({ pet, setSelectedPet }) => {
       >
         <div className="flex flex-col gap-8">
           <div className="flex items-center gap-4">
-            <h2 className="font-bold text-4xl">{pet?.pet_name}</h2>
+            <EditableField
+              value={pet?.pet_name}
+              onChange={(v) => setPet({ ...pet, pet_name: v })}
+              mode={mode}
+              className="text-4xl font-bold"
+            />
             <span className="bg-negative p-2 rounded-2xl">Zaginiony</span>
             <button
               onClick={() => setSelectedPet(null)}
@@ -100,49 +157,97 @@ const PetInfo = ({ pet, setSelectedPet }) => {
               </svg>
             </button>
           </div>
+
           <ImageCarousel images={pet?.photo_url} />
         </div>
 
-        {/* Dane zwierzaka – przywrócona struktura i klasy */}
+        {/* Dane zwierzaka */}
         <div className="flex flex-col py-8 border-b-2 border-accent gap-4">
           <div className="flex items-center gap-2">
             <p className="bold text-xl">Gatunek:</p>
-            <p className="text-accent">{pet?.pet_species}</p>
+            <EditableField
+              value={pet?.pet_species}
+              onChange={(v) => setPet({ ...pet, pet_species: v })}
+              mode={mode}
+            />
           </div>
           <div className="flex items-center gap-2">
             <p className="bold text-xl">Rasa:</p>
-            <p className="text-accent">{pet?.pet_breed}</p>
+            <EditableField
+              value={pet?.pet_breed}
+              onChange={(v) => setPet({ ...pet, pet_breed: v })}
+              mode={mode}
+            />
           </div>
           <div className="flex items-center gap-2">
             <p className="bold text-xl">Wiek:</p>
-            <p className="text-accent">Ok. {pet?.pet_age}</p>
+            <EditableField
+              value={pet?.pet_age}
+              onChange={(v) => setPet({ ...pet, pet_age: v })}
+              mode={mode}
+            />
           </div>
 
           <div className="space-y-2 mt-6 border-t border-secondary pt-4">
             <p className="font-bold text-xl">Znaki szczególne:</p>
-            <p className="text-accent">{pet?.description}</p>
+            <EditableField
+              value={pet?.description}
+              onChange={(v) => setPet({ ...pet, description: v })}
+              mode={mode}
+            />
           </div>
 
           <div className="space-y-2 mt-6 border-t border-secondary pt-4">
             <p className="font-bold text-xl">Ostatnio widziany:</p>
-            <p className="text-accent">
-              01.03.2022, ok 18:30 <br />
-              {pet?.street}, {pet?.city}
-            </p>
+            {mode === 'edit' ? (
+              <div className="flex flex-col gap-2">
+                <input
+                  type="text"
+                  value={pet?.street ?? ''}
+                  onChange={(e) => setPet({ ...pet, street: e.target.value })}
+                  className="border rounded px-2 py-1 text-accent"
+                  placeholder="Ulica"
+                />
+                <input
+                  type="text"
+                  value={pet?.city ?? ''}
+                  onChange={(e) => setPet({ ...pet, city: e.target.value })}
+                  className="border rounded px-2 py-1 text-accent"
+                  placeholder="Miasto"
+                />
+              </div>
+            ) : (
+              <p className="text-accent">
+                01.03.2022, ok 18:30 <br />
+                {pet?.street}, {pet?.city}
+              </p>
+            )}
           </div>
         </div>
 
+        {/* Mapa – placeholder */}
         <div className="border-b-2 border-accent pb-8">
           <div className="w-full h-[200px] flex justify-center items-center bg-secondary rounded-2xl mt-8">
             <p>Tutaj będzie mapa... SERIO!</p>
           </div>
         </div>
 
+        {/* Kontakt + akcje */}
         <div className="flex flex-col py-8 space-y-2">
           <p className="font-bold text-xl mb-4">Kontakt do właściciela:</p>
-          <p className="text-accent">{pet?.owner}</p>
-          <p className="text-accent">Tel: {pet?.phone || 'Nie podano'}</p>
-          {!isOwner && (
+          <EditableField
+            value={pet?.owner}
+            onChange={(v) => setPet({ ...pet, owner: v })}
+            mode={mode}
+          />
+          <EditableField
+            value={pet?.phone || 'Nie podano'}
+            onChange={(v) => setPet({ ...pet, phone: v })}
+            mode={mode}
+          />
+
+          {/* Chat tylko dla oglądającego (nie dla właściciela) w trybie 'view' */}
+          {!isOwner && mode === 'view' && (
             <button
               className="bg-cta rounded-2xl py-1 px-3 ml-auto text-lg cursor-pointer"
               onClick={openChatWindow}
@@ -150,14 +255,25 @@ const PetInfo = ({ pet, setSelectedPet }) => {
               Chat
             </button>
           )}
+
+          {/* Zapis tylko w trybie edycji */}
+          {mode === 'edit' && (
+            <button
+              onClick={handleSave}
+              className="bg-cta rounded-2xl py-1 px-3 ml-auto text-lg cursor-pointer"
+            >
+              Zapisz
+            </button>
+          )}
         </div>
       </div>
 
+      {/* Modal czatu – backend */}
       {isChatOpen && (
         <ChatModal
           isOpen={true}
           onClose={closeChatWindow}
-          partnerName={pet?.owner}
+          partnerName={pet?.owner || 'Właściciel'}
           topicName={pet?.pet_name || 'Zwierzak'}
           currentUserId={me || 'me'}
           messages={messages.map((m) => ({
