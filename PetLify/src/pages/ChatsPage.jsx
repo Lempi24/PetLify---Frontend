@@ -1,10 +1,12 @@
+// src/pages/ChatsPage.jsx
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import SubPagesNav from "../components/ui/SubPagesNav";
 import BurgerMenu from "../components/ui/BurgerMenu";
 import ChatModal from "../components/chat/ChatModal";
-import { listChats, addMessage, deleteChat } from "../utils/chatStore";
 import useAuth from "../hooks/useAuth";
+import { fetchThreads, fetchMessages, sendMessageHttp, deleteThread } from "../services/chatApi";
+import { getSocket } from "../lib/socket";
 
 function PersonSVG() {
   return (
@@ -20,38 +22,93 @@ export default function ChatsPage() {
   const currentPath = location.pathname;
 
   const [isBurgerOpen, setIsBurgerOpen] = useState(false);
-  const [chats, setChats] = useState([]);
-  const [openChat, setOpenChat] = useState(null);
+  const [threads, setThreads] = useState([]);
+  const [openThread, setOpenThread] = useState(null);
+  const [messages, setMessages] = useState([]);
 
   const loggedUser = useAuth();
   const currentUserId = loggedUser?.email || "me";
 
+  // load list
   useEffect(() => {
-    document.body.classList.add("page-chats");
-    return () => document.body.classList.remove("page-chats");
+    fetchThreads().then(setThreads).catch(console.error);
   }, []);
 
+  // socket live updates
   useEffect(() => {
-    setChats(listChats());
-  }, []);
+    const socket = getSocket();
 
-  function handleOpenThread(thread) {
-    setOpenChat(thread);
+    socket.on('chat:notify', ({ threadId, preview, deleted }) => {
+      if (deleted) {
+        setThreads(prev => prev.filter(t => t.id !== threadId));
+        if (openThread?.id === threadId) {
+          setOpenThread(null);
+          setMessages([]);
+        }
+        return;
+      }
+      // odśwież listę, ewentualnie dopnij podgląd
+      setThreads((prev) => {
+        const next = [...prev];
+        const i = next.findIndex(t => t.id === threadId);
+        if (i >= 0 && preview) {
+          next[i] = { ...next[i], last_message: preview.text || (preview.attachments?.[0]?.name || 'Załącznik'), last_time: preview.createdAt };
+        }
+        return next.sort((a, b) => new Date(b.last_time || b.created_at) - new Date(a.last_time || a.created_at));
+      });
+    });
+
+    return () => {
+      socket.off('chat:notify');
+    };
+  }, [openThread?.id]);
+
+  async function handleOpenThread(thread) {
+    setOpenThread(thread);
+    setMessages(await fetchMessages(thread.id));
+    // dołącz do pokoju wątku
+    const socket = getSocket();
+    socket.emit('chat:join', { threadId: thread.id });
+    socket.off('chat:newMessage');
+    socket.on('chat:newMessage', (msg) => {
+      if (msg.threadId !== thread.id) return;
+      setMessages((prev) => [...prev, msg]);
+    });
   }
 
-  function handleSend(text, attachments = []) {
-    if (!openChat) return;
-    const updated = addMessage(openChat.id, currentUserId, text, attachments);
-    setOpenChat(updated);
-    setChats(listChats());
+  async function handleSend(text, attachments = []) {
+    if (!openThread) return;
+    const socket = getSocket();
+
+    // spróbuj wysłać przez socket
+    if (socket.connected) {
+      socket.emit('chat:send', { threadId: openThread.id, text, attachments });
+    } else {
+      // fallback HTTP
+      const msg = await sendMessageHttp(openThread.id, { text, attachments });
+      setMessages((prev) => [...prev, msg]);
+    }
   }
 
-  function handleDeleteThread(e, threadId) {
-    e.stopPropagation();
-    if (!confirm("Usunąć ten czat?")) return;
-    deleteChat(threadId);
-    setChats(listChats());
-    if (openChat?.id === threadId) setOpenChat(null);
+  async function handleDelete(threadId, e) {
+    e?.stopPropagation();
+    const yes = window.confirm("Usunąć ten wątek wraz z wiadomościami?");
+    if (!yes) return;
+    try {
+      await deleteThread(threadId);
+      setThreads(prev => prev.filter(t => t.id !== threadId));
+      if (openThread?.id === threadId) {
+        setOpenThread(null);
+        setMessages([]);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Nie udało się usunąć wątku.");
+    }
+  }
+
+  function fmtIso(s) {
+    return s ? new Date(s).toLocaleString() : "";
   }
 
   return (
@@ -68,13 +125,11 @@ export default function ChatsPage() {
         </div>
 
         <div className="flex flex-col gap-4 pb-10 h-full pr-2 lg:overflow-y-auto custom-scroll">
-          {chats.length === 0 && (
-            <div className="text-accent">
-              Brak rozmów. Otwórz Chat z poziomu ogłoszenia i wyślij pierwszą wiadomość.
-            </div>
+          {threads.length === 0 && (
+            <div className="text-accent">Brak rozmów. Otwórz Chat z poziomu ogłoszenia i wyślij pierwszą wiadomość.</div>
           )}
 
-          {chats.map((c) => (
+          {threads.map((c) => (
             <div
               key={c.id}
               className="relative bg-main rounded-2xl p-4 pr-16 shadow-[0_6px_18px_rgba(0,0,0,.35)] cursor-pointer hover:bg-black/20 transition"
@@ -82,12 +137,28 @@ export default function ChatsPage() {
             >
               <div className="absolute -left-2 top-2 bottom-2 w-2 rounded-xl bg-cta" />
 
+              {/* data/godzina */}
+              <div className="absolute right-3 top-3 text-sm bg-black/30 text-text rounded-md px-2 py-1">
+                {fmtIso(c.last_time || c.created_at)}
+              </div>
+
+              {/* przycisk usuń */}
               <button
-                className="absolute right-3 top-3 text-sm bg-black/30 hover:bg-black/50 text-text rounded-md px-2 py-1"
-                title="Usuń czat"
-                onClick={(e) => handleDeleteThread(e, c.id)}
+                className="absolute right-3 bottom-3 text-text/80 hover:text-negative"
+                title="Usuń wątek"
+                aria-label="Usuń wątek"
+                onClick={(e) => handleDelete(c.id, e)}
               >
-                Usuń
+                <svg viewBox="0 0 24 24" className="w-6 h-6">
+                  <path
+                    d="M3 6h18M9 6V4a2 2 0 012-2h2a2 2 0 012 2v2m1 0l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
 
               <div className="flex items-start gap-4">
@@ -97,13 +168,12 @@ export default function ChatsPage() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-bold text-lg truncate">{c.partnerName || "Użytkownik"}</p>
-                    <p className="text-sm text-accent whitespace-nowrap">
-                      {c.lastTimeISO ? new Date(c.lastTimeISO).toLocaleString() : ""}
-                    </p>
+                    <p className="font-bold text-lg truncate">{c.subject || "Zwierzak"}</p>
                   </div>
-                  <p className="text-cta text-sm">W sprawie: {c.subject || "Zwierzak"}</p>
-                  <p className="text-sm truncate">{c.lastMessage || "—"}</p>
+                  <p className="text-cta text-sm">
+                    Rozmowa między: {c.owner_email} ↔ {c.partner_email}
+                  </p>
+                  <p className="text-sm truncate">{c.last_message || "—"}</p>
                 </div>
               </div>
             </div>
@@ -111,14 +181,20 @@ export default function ChatsPage() {
         </div>
       </div>
 
-      {openChat && (
+      {openThread && (
         <ChatModal
           isOpen={true}
-          onClose={() => setOpenChat(null)}
-          partnerName={openChat.partnerName || "Użytkownik"}
-          topicName={openChat.subject || "Zwierzak"}
+          onClose={() => setOpenThread(null)}
+          partnerName={openThread.owner_email === currentUserId ? openThread.partner_email : openThread.owner_email}
+          topicName={openThread.subject || "Zwierzak"}
           currentUserId={currentUserId}
-          messages={openChat.messages || []}
+          messages={messages.map(m => ({
+            id: m.id,
+            senderId: m.sender_email,
+            text: m.text,
+            createdAt: m.createdat || m.created_at || m.createdAt,
+            attachments: m.attachments
+          }))}
           onSend={handleSend}
         />
       )}
