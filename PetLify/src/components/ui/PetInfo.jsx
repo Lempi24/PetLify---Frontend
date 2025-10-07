@@ -1,6 +1,12 @@
+// src/components/ui/PetInfo.jsx
+import { useState } from 'react';
 import ImageCarousel from './ImageCarousel';
 import useAuth from '../../hooks/useAuth';
-import { useState } from 'react';
+import ChatModal from '../chat/ChatModal';
+import {
+	createDraftThreadForPet,
+	ensureThreadAndAddMessage,
+} from '../../utils/chatStore';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 const EditableField = ({
@@ -45,7 +51,32 @@ const PetInfo = ({ pet: initialPet, setSelectedPet, mode }) => {
 			console.error('Błąd zapisu: ', error);
 		}
 	};
+	// --- STAN CZATU (UI only, do zapisu w localStorage przez chatStore) ---
+	const [chatDraft, setChatDraft] = useState(null);
+	const [messages, setMessages] = useState([]);
 
+	function openChatWindow() {
+		const draft = createDraftThreadForPet(pet);
+		setChatDraft(draft);
+		setMessages([]); // pusto na starcie
+	}
+
+	function closeChatWindow() {
+		setChatDraft(null);
+		setMessages([]);
+	}
+
+	function handleSend(text, attachments = []) {
+		// pierwszy send => tworzy wątek i zapisuje do storage; kolejne -> dopisują
+		const saved = ensureThreadAndAddMessage(
+			chatDraft || pet,
+			loggedUser?.email || 'me',
+			text,
+			attachments
+		);
+		setChatDraft(saved); // od teraz to zapisany wątek (ma id)
+		setMessages(saved.messages || []); // odśwież widok
+	}
 	return (
 		<div
 			className='fixed backdrop-blur-2xl h-screen w-screen z-10000'
@@ -159,7 +190,10 @@ const PetInfo = ({ pet: initialPet, setSelectedPet, mode }) => {
 						mode={mode}
 					/>
 					{!isOwner && mode === 'view' && (
-						<button className='bg-cta rounded-2xl py-1 px-3 ml-auto text-lg cursor-pointer'>
+						<button
+							className='bg-cta rounded-2xl py-1 px-3 ml-auto text-lg cursor-pointer'
+							onClick={openChatWindow}
+						>
 							Chat
 						</button>
 					)}
@@ -173,6 +207,18 @@ const PetInfo = ({ pet: initialPet, setSelectedPet, mode }) => {
 					)}
 				</div>
 			</div>
+			{/* Modal – dopiero wysłanie 1. wiadomości zapisze wątek do localStorage */}
+			{chatDraft && (
+				<ChatModal
+					isOpen={true}
+					onClose={closeChatWindow}
+					partnerName={chatDraft.partnerName || 'Właściciel'}
+					topicName={chatDraft.subject || pet?.pet_name || 'Zwierzak'}
+					currentUserId={loggedUser?.email || 'me'}
+					messages={messages}
+					onSend={handleSend}
+				/>
+			)}
 		</div>
 	);
 };
