@@ -1,20 +1,68 @@
 import ImageCarousel from './ImageCarousel';
 import useAuth from '../../hooks/useAuth';
-const PetInfo = ({ pet, setSelectedPet }) => {
+import { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+const EditableField = ({
+	value,
+	onChange,
+	mode,
+	type = 'text',
+	className = '',
+}) =>
+	mode === 'edit' ? (
+		<input
+			type={type}
+			value={value}
+			onChange={(e) => onChange(e.target.value)}
+			className='border rounded px-2 py-1 text-accent'
+		/>
+	) : (
+		<p className={`text-accent ${className}`}>{value}</p>
+	);
+
+const PetInfo = ({ pet: initialPet, setSelectedPet, mode }) => {
+	const navigate = useNavigate();
 	const loggedUser = useAuth();
-	const isOwner = loggedUser && loggedUser.email === pet.owner;
+	const isOwner = loggedUser && loggedUser.email === initialPet.owner;
+	const [pet, setPet] = useState(initialPet);
+	const handleSave = async () => {
+		const token = localStorage.getItem('token');
+		if (!token) {
+			navigate('/');
+		}
+		try {
+			const response = await axios.put(
+				import.meta.env.VITE_BACKEND_URL + `/user-reports/edit-report`,
+				pet,
+				{
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				}
+			);
+		} catch (error) {
+			console.error('Błąd zapisu: ', error);
+		}
+	};
+
 	return (
 		<div
 			className='fixed backdrop-blur-2xl h-screen w-screen z-10000'
 			onClick={() => setSelectedPet(null)}
 		>
 			<div
-				className='fixed left-1/2 -translate-x-1/2 h-full w-full lg:w-1/2 bg-main  overflow-y-auto p-6'
+				className='fixed left-1/2 -translate-x-1/2 h-full w-full lg:w-1/2 bg-main overflow-y-auto p-6'
 				onClick={(e) => e.stopPropagation()}
 			>
 				<div className='flex flex-col gap-8'>
 					<div className='flex items-center gap-4'>
-						<h2 className='font-bold text-4xl'>{pet.pet_name}</h2>
+						<EditableField
+							value={pet.pet_name}
+							onChange={(v) => setPet({ ...pet, pet_name: v })}
+							mode={mode}
+							className={'text-4xl font-bold'}
+						/>
 						<span className='bg-negative p-2 rounded-2xl'>Zaginiony</span>
 						<button
 							onClick={() => setSelectedPet(null)}
@@ -34,28 +82,63 @@ const PetInfo = ({ pet, setSelectedPet }) => {
 				<div className='flex flex-col py-8 border-b-2 border-accent gap-4'>
 					<div className='flex items-center gap-2'>
 						<p className='bold text-xl'>Gatunek:</p>
-						<p className='text-accent'>{pet.pet_species}</p>
+						<EditableField
+							value={pet.pet_species}
+							onChange={(v) => setPet({ ...pet, pet_species: v })}
+							mode={mode}
+						/>
 					</div>
 					<div className='flex items-center gap-2'>
 						<p className='bold text-xl'>Rasa:</p>
-						<p className='text-accent'>{pet.pet_breed}</p>
+						<EditableField
+							value={pet.pet_breed}
+							onChange={(v) => setPet({ ...pet, pet_breed: v })}
+							mode={mode}
+						/>
 					</div>
 					<div className='flex items-center gap-2'>
 						<p className='bold text-xl'>Wiek:</p>
-						<p className='text-accent'>Ok. {pet.pet_age}</p>
+						<EditableField
+							value={pet.pet_age}
+							onChange={(v) => setPet({ ...pet, pet_age: v })}
+							mode={mode}
+						/>
 					</div>
 
 					<div className='space-y-2 mt-6 border-t border-secondary pt-4'>
 						<p className='font-bold text-xl'>Znaki szczególne:</p>
-						<p className='text-accent'>{pet.description}</p>
+						<EditableField
+							value={pet.description}
+							onChange={(v) => setPet({ ...pet, description: v })}
+							mode={mode}
+						/>
 					</div>
 
 					<div className='space-y-2 mt-6 border-t border-secondary pt-4'>
 						<p className='font-bold text-xl'>Ostatnio widziany:</p>
-						<p className='text-accent'>
-							01.03.2022, ok 18:30 <br />
-							{pet.street}, {pet.city}
-						</p>
+						{mode === 'edit' ? (
+							<div className='flex flex-col gap-2'>
+								<input
+									type='text'
+									value={pet.street}
+									onChange={(e) => setPet({ ...pet, street: e.target.value })}
+									className='border rounded px-2 py-1 text-accent'
+									placeholder='Ulica'
+								/>
+								<input
+									type='text'
+									value={pet.city}
+									onChange={(e) => setPet({ ...pet, city: e.target.value })}
+									className='border rounded px-2 py-1 text-accent'
+									placeholder='Miasto'
+								/>
+							</div>
+						) : (
+							<p className='text-accent'>
+								01.03.2022, ok 18:30 <br />
+								{pet.street}, {pet.city}
+							</p>
+						)}
 					</div>
 				</div>
 				<div className='border-b-2 border-accent pb-8'>
@@ -65,11 +148,27 @@ const PetInfo = ({ pet, setSelectedPet }) => {
 				</div>
 				<div className='flex flex-col py-8 space-y-2'>
 					<p className='font-bold text-xl mb-4'>Kontakt do właściciela:</p>
-					<p className='text-accent'>{pet.owner}</p>
-					<p className='text-accent'>Tel: {pet.phone || 'Nie podano'}</p>
-					{!isOwner && (
+					<EditableField
+						value={pet.owner}
+						onChange={(v) => setPet({ ...pet, owner: v })}
+						mode={mode}
+					/>
+					<EditableField
+						value={pet.phone || 'Nie podano'}
+						onChange={(v) => setPet({ ...pet, phone: v })}
+						mode={mode}
+					/>
+					{!isOwner && mode === 'view' && (
 						<button className='bg-cta rounded-2xl py-1 px-3 ml-auto text-lg cursor-pointer'>
 							Chat
+						</button>
+					)}
+					{mode === 'edit' && (
+						<button
+							onClick={() => handleSave()}
+							className='bg-cta rounded-2xl py-1 px-3 ml-auto text-lg cursor-pointer'
+						>
+							Zapisz
 						</button>
 					)}
 				</div>
@@ -77,4 +176,5 @@ const PetInfo = ({ pet, setSelectedPet }) => {
 		</div>
 	);
 };
+
 export default PetInfo;

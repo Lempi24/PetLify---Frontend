@@ -21,6 +21,7 @@ const ReportsPage = () => {
 	};
 	const allReports = [...userReportsData.found, ...userReportsData.lost];
 	const [selectedPet, setSelectedPet] = useState(null);
+	const [mode, setMode] = useState('view');
 	const fetchUserReports = async () => {
 		const token = localStorage.getItem('token');
 		if (!token) {
@@ -63,13 +64,24 @@ const ReportsPage = () => {
 							petName={report.pet_name}
 							petStatus={translatedStatus[report.status]}
 							reportDate={report.found_date?.split('T')[0]}
-							onAction={() => setSelectedPet(report)}
+							onView={() => {
+								setSelectedPet(report);
+								setMode('view');
+							}}
+							onEdit={() => {
+								setSelectedPet(report);
+								setMode('edit');
+							}}
 						/>
 					))}
 				</div>
 			</div>
 			{selectedPet && (
-				<PetInfo pet={selectedPet} setSelectedPet={setSelectedPet} />
+				<PetInfo
+					pet={selectedPet}
+					setSelectedPet={setSelectedPet}
+					mode={mode}
+				/>
 			)}
 		</div>
 	);
