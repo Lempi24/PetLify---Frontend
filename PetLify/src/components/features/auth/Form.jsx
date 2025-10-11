@@ -82,7 +82,7 @@ const Form = () => {
 		<div className='relative w-full h-full flex flex-col items-center justify-center lg:flex-row'>
 			{loading && (
 				<div className='absolute w-full h-full flex items-center justify-center bg-main-transparent z-100'>
-					<div class='w-10 h-10 border-4 border-accent border-t-cta rounded-full animate-spin'></div>
+					<div className='w-10 h-10 border-4 border-accent border-t-cta rounded-full animate-spin'></div>
 				</div>
 			)}
 			<form

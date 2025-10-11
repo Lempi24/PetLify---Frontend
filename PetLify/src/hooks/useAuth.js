@@ -9,8 +9,11 @@ const useAuth = () => {
 			const token = localStorage.getItem('token');
 			if (token) {
 				const decodedToken = jwtDecode(token);
+				console.log('Decoded token:', decodedToken);
 				setUser({
 					email: decodedToken.email,
+					role: decodedToken.role,
+					token: token,
 				});
 			} else {
 				setUser(null);
@@ -32,6 +35,6 @@ const useAuth = () => {
 			window.removeEventListener('tokenChange', updateUserFromToken);
 		};
 	}, []);
-	return user;
+	return { user };
 };
 export default useAuth;

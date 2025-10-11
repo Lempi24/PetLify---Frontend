@@ -5,22 +5,33 @@ const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
 	const [user, setUser] = useState(null);
-	const loggedInUser = useAuth();
+	const { user: loggedInUser } = useAuth();
 	const fetchUser = async () => {
-		if (!loggedInUser?.email) return;
+		if (!loggedInUser?.email) {
+			console.log("Brak emaila, nie pobieram użytkownika.");
+			return;
+		}
 		const token = localStorage.getItem('token');
-		if (!token) return;
-		const { data } = await axios.get(
-			import.meta.env.VITE_BACKEND_URL + '/auth/me',
-			{
-				headers: {
-					Authorization: `Bearer ${token}`,
-					userEmail: loggedInUser.email,
-				},
-			}
-		);
-		setUser(data);
-		console.log('Ładuję teraz' + loggedInUser.email);
+		if (!token) {
+			console.log("Brak tokena, nie pobieram użytkownika.");
+			return;
+		}
+		
+		try {
+			const { data } = await axios.get(
+				import.meta.env.VITE_BACKEND_URL + '/auth/me',
+				{
+					headers: {
+						Authorization: `Bearer ${token}`,
+						userEmail: loggedInUser.email,
+					},
+				}
+			);
+			console.log("Pobrano dane użytkownika:", data);
+			setUser(data);
+		} catch (e) {
+			console.error("Błąd podczas pobierania użytkownika:", e);
+		}
 	};
 
 	useEffect(() => {

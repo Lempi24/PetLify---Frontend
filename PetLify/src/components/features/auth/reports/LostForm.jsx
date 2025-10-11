@@ -16,7 +16,6 @@ const LostForm = () => {
 		reset,
 		watch,
 		setValue,
-		trigger,
 	} = useForm({ mode: 'onChange' });
 
 	const petSpeciesTypes = [
@@ -59,6 +58,7 @@ const LostForm = () => {
 			setPreviews([]);
 		}
 	}, [photoFiles]);
+
 	const removePhoto = (indexToRemove) => {
 		const updatedFiles = Array.from(photoFiles).filter(
 			(_, index) => index !== indexToRemove
@@ -69,6 +69,7 @@ const LostForm = () => {
 
 		setValue('photos', dataTransfer.files, { shouldValidate: true });
 	};
+
 	const handleFileChange = (event) => {
 		const currentFiles = photoFiles ? Array.from(photoFiles) : [];
 		const newFiles = Array.from(event.target.files);
@@ -86,6 +87,7 @@ const LostForm = () => {
 
 		setValue('photos', dataTransfer.files, { shouldValidate: true });
 	};
+
 	const onSubmit = async (data) => {
 		console.log('onSubmit został wywołany!');
 		const token = localStorage.getItem('token');
@@ -121,9 +123,11 @@ const LostForm = () => {
 			toast.success('Zgłoszenie zostało wysłane');
 			reset();
 			navigate('/main-page');
+
 		} catch (error) {
 			toast.error('Wystąpił błąd przy wysyłaniu formularza');
 			console.error(error);
+
 		} finally {
 			setLoading(false);
 		}

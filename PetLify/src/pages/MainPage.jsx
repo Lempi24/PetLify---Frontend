@@ -10,7 +10,10 @@ import { useUser } from '../context/UserContext';
 const MainPage = () => {
 	const { user, setUser } = useUser();
 	console.log(user);
-	const loggedInUser = useAuth();
+	const { user: loggedInUser } = useAuth();
+
+	console.log("From useUser", user);
+	console.log("From useAuth", loggedInUser);
 	const navigate = useNavigate();
 	const [activeTab, setActiveTab] = useState('lost');
 	const [userPanelActive, setUserPanelActive] = useState(false);
@@ -37,7 +40,7 @@ const MainPage = () => {
 		}
 		try {
 			const response = await axios.get(
-				import.meta.env.VITE_BACKEND_URL + `/main-page/fetch-pets?type=${type}`,
+				import.meta.env.VITE_BACKEND_URL + `/main-page/fetch-pets?type=${type}&status=active`,
 				{
 					headers: {
 						Authorization: `Bearer ${token}`,
@@ -163,6 +166,14 @@ const MainPage = () => {
 							>
 								Ustawienia
 							</Link>
+							{loggedInUser?.role == 'admin' && (
+								<Link
+									to='/admin-panel'
+									className='bg-cta w-9/10 rounded-2xl p-2 font-bold cursor-pointer text-center'
+								>
+									Panel administracyjny
+								</Link>
+							)}
 							<div className='w-9/10'>
 								<button
 									className='flex items-center cursor-pointer gap-3'
