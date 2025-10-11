@@ -35,6 +35,10 @@ export const UserProvider = ({ children }) => {
 	};
 
 	useEffect(() => {
+		if (!loggedInUser) {
+			setUser(null);
+			return;
+		}
 		fetchUser();
 	}, [loggedInUser]);
 

@@ -8,7 +8,7 @@ import axios from 'axios';
 import useAuth from '../hooks/useAuth';
 import { useUser } from '../context/UserContext';
 const MainPage = () => {
-	const { user } = useUser();
+	const { user, setUser } = useUser();
 	console.log(user);
 	const { user: loggedInUser } = useAuth();
 
@@ -66,6 +66,7 @@ const MainPage = () => {
 
 	const handleLogOut = () => {
 		localStorage.removeItem('token');
+		window.dispatchEvent(new Event('tokenChange'));
 		navigate('/');
 	};
 	const handlePetInfo = (pet) => {
@@ -255,14 +256,14 @@ const MainPage = () => {
 								</button>
 							</div>
 							<div className='relative p-1 w-1/2'>
-								<button 
+								<button
 									className='group h-100 w-full overflow-hidden cursor-pointer'
 									onClick={() => {
 										setHandlePopUpState({
 											formChoiceActive: false,
 											formActive: false,
 										});
-										navigate('/main-page/create-found-form')
+										navigate('/main-page/create-found-form');
 									}}
 								>
 									<img
@@ -282,7 +283,11 @@ const MainPage = () => {
 				</div>
 			)}
 			{selectedPet && (
-				<PetInfo pet={selectedPet} setSelectedPet={setSelectedPet} />
+				<PetInfo
+					pet={selectedPet}
+					setSelectedPet={setSelectedPet}
+					mode='view'
+				/>
 			)}
 		</div>
 	);

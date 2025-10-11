@@ -5,8 +5,10 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { useUser } from '../../../context/UserContext';
 const Form = () => {
 	const navigate = useNavigate();
+	const { fetchUser } = useUser();
 	const [isLoging, setIsLoging] = useState(true);
 	const [loading, setLoading] = useState(false);
 	const {
@@ -37,6 +39,7 @@ const Form = () => {
 				);
 				if (response.data.token) {
 					localStorage.setItem('token', response.data.token);
+					window.dispatchEvent(new Event('tokenChange'));
 					reset();
 					navigate('/main-page');
 				}
