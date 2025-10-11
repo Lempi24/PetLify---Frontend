@@ -136,7 +136,7 @@ const ManageLostReports = () => {
 
       {showConfirmDialog && (
         <div className="fixed inset-0 bg-opacity-10 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-main rounded-lg border border-gray-300 shadow-xl max-w-md w-full p-6">
+          <div className="bg-main rounded-lg border border-primary shadow-xl max-w-md w-full p-6">
             <h3 className="text-xl font-bold text-orange-400 mb-4">
               Potwierdź akcję
             </h3>
@@ -146,7 +146,7 @@ const ManageLostReports = () => {
             <div className="flex justify-end gap-3">
               <button
                 onClick={handleCancelAction}
-                className="px-4 py-2 text-gray-400 border border-gray-300 rounded-md hover:bg-gray-800 transition-colors"
+                className="px-4 py-2 text-gray-400 border border-primary rounded-md hover:bg-gray-800 transition-colors"
               >
                 Anuluj
               </button>

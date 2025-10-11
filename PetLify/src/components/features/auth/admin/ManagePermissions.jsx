@@ -92,7 +92,7 @@ const ManagePermissions = () => {
                     Tutaj możesz nadawać lub odbierać uprawnienia użytkownikom.
                 </p>
 
-                <div className="w-full max-w-md bg-gray-800 rounded-lg p-6 shadow-lg">
+                <div className="w-full max-w-md bg-secondary rounded-lg p-6 shadow-lg">
                     <form onSubmit={handleUpdatePermissions} className="space-y-4">
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
@@ -103,7 +103,7 @@ const ManagePermissions = () => {
                                 id="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                className="text-text pl-12 pr-3 py-3 rounded-md bg-secondary border-cta border-2 placeholder:text-gray w-full "
                                 placeholder="Wprowadź email użytkownika"
                                 required
                             />
@@ -117,7 +117,7 @@ const ManagePermissions = () => {
                                 id="role"
                                 value={selectedRole}
                                 onChange={(e) => setSelectedRole(e.target.value)}
-                                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                className="pl-12 pr-3 py-3 rounded-md bg-secondary border-cta border-2 placeholder:text-gray w-full "
                             >
                                 <option value="user">User</option>
                                 <option value="admin">Admin</option>
@@ -130,7 +130,7 @@ const ManagePermissions = () => {
                             className={`w-full py-2 px-4 rounded-md font-medium ${
                                 isLoading
                                     ? 'bg-gray-600 cursor-not-allowed'
-                                    : 'bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-gray-800'
+                                    : 'bg-cta hover:bg-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-gray-800'
                             } text-white transition-colors`}
                         >
                             {isLoading ? 'Aktualizowanie...' : 'Zaktualizuj uprawnienia'}
