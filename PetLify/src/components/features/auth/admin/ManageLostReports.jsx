@@ -8,6 +8,8 @@ import AdminOptionsNav from '../../../ui/AdminOptionsNav';
 const ManageLostReports = () => {
   const [lostPets, setLostPets] = useState([]);
   const [selectedPet, setSelectedPet] = useState(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingAction, setPendingAction] = useState({ type: '', petId: null });
   const navigate = useNavigate();
 
   const petSpeciesTypes = [
@@ -28,7 +30,7 @@ const ManageLostReports = () => {
 
     try {
       const response = await axios.get(
-        import.meta.env.VITE_BACKEND_URL + `/main-page/fetch-pets?type=lost`,
+        import.meta.env.VITE_BACKEND_URL + `/main-page/fetch-pets?type=lost&status=pending`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -54,7 +56,12 @@ const ManageLostReports = () => {
     fetchLostPets();
   }, []);
 
-  const handleApprove = async (petId) => {
+  const handleActionClick = (type, petId) => {
+    setPendingAction({ type, petId });
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmAction = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/');
@@ -62,47 +69,52 @@ const ManageLostReports = () => {
     }
 
     try {
-      await axios.post(
-        import.meta.env.VITE_BACKEND_URL + ``, // TODO: dodać endpoint do zatwierdzania raportów
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      setLostPets((prev) => prev.filter((pet) => pet.id !== petId));
+      if (pendingAction.type === 'approve') {
+        await axios.post(
+          import.meta.env.VITE_BACKEND_URL + `/admin-panel/approve-report`,
+          { reportId: pendingAction.petId, reportType: 'lost' },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      } else if (pendingAction.type === 'reject') {
+        await axios.post(
+          import.meta.env.VITE_BACKEND_URL + `/admin-panel/reject-report`,
+          { reportId: pendingAction.petId, reportType: 'lost' },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      }
+
+      setLostPets((prev) => prev.filter((pet) => pet.id !== pendingAction.petId));
+      setShowConfirmDialog(false);
+      setPendingAction({ type: '', petId: null });
     } catch (error) {
-      console.error('Błąd podczas zatwierdzania raportu:', error);
+      console.error('Błąd podczas wykonywania akcji:', error);
     }
   };
 
-  const handleReject = async (petId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/');
-      return;
-    }
-
-    try {
-      await axios.post(
-        import.meta.env.VITE_BACKEND_URL + ``, // TODO: dodać endpoint do odrzucania raportów
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setLostPets((prev) => prev.filter((pet) => pet.id !== petId));
-    } catch (error) {
-      console.error('Błąd podczas odrzucania raportu:', error);
-    }
+  const handleCancelAction = () => {
+    setShowConfirmDialog(false);
+    setPendingAction({ type: '', petId: null });
   };
 
   const handlePetClick = (pet) => {
     setSelectedPet(pet);
+  };
+
+  const getActionText = () => {
+    if (pendingAction.type === 'approve') {
+      return 'zatwierdzić';
+    } else if (pendingAction.type === 'reject') {
+      return 'odrzucić';
+    }
+    return '';
   };
 
   return (
@@ -112,7 +124,7 @@ const ManageLostReports = () => {
         <h1 className="text-3xl md:text-4xl font-extrabold text-orange-400 mb-6">
           Akceptuj lub odrzuć zgłoszenia zaginionych zwierząt
         </h1>
-        <p className="text-md text-gray-600 mb-10">Tutaj możesz akceptować lub odrzucać zgłoszenia zaginionych zwierząt.</p>
+        <p className="text-md text-gray-400 mb-10">Tutaj możesz akceptować lub odrzucać zgłoszenia zaginionych zwierząt.</p>
       </div>
       
       {selectedPet && (
@@ -120,6 +132,37 @@ const ManageLostReports = () => {
           pet={selectedPet} 
           setSelectedPet={setSelectedPet} 
         />
+      )}
+
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-opacity-10 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-main rounded-lg border border-gray-300 shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-orange-400 mb-4">
+              Potwierdź akcję
+            </h3>
+            <p className="text-gray-400 mb-6">
+              Czy na pewno chcesz {getActionText()} zgłoszenie o ID: <strong>{pendingAction.petId}</strong>?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleCancelAction}
+                className="px-4 py-2 text-gray-400 border border-gray-300 rounded-md hover:bg-gray-800 transition-colors"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleConfirmAction}
+                className={`px-4 py-2 text-white rounded-md transition-colors ${
+                  pendingAction.type === 'approve' 
+                    ? 'bg-green-500 hover:bg-green-600' 
+                    : 'bg-red-500 hover:bg-red-600'
+                }`}
+              >
+                {pendingAction.type === 'approve' ? 'Zatwierdź' : 'Odrzuć'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       
       <div className="flex flex-col gap-4 w-full px-4 max-w-4xl mx-auto">
@@ -136,18 +179,18 @@ const ManageLostReports = () => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleApprove(pet.id);
+                  handleActionClick('approve', pet.id);
                 }}
-                className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
+                className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition-colors"
               >
                 Zatwierdź
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleReject(pet.id);
+                  handleActionClick('reject', pet.id);
                 }}
-                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors"
               >
                 Odrzuć
               </button>

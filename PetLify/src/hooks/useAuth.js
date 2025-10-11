@@ -13,6 +13,7 @@ const useAuth = () => {
 				setUser({
 					email: decodedToken.email,
 					role: decodedToken.role,
+					token: token,
 				});
 			}
 		} catch (error) {

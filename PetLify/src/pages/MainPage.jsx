@@ -40,7 +40,7 @@ const MainPage = () => {
 		}
 		try {
 			const response = await axios.get(
-				import.meta.env.VITE_BACKEND_URL + `/main-page/fetch-pets?type=${type}`,
+				import.meta.env.VITE_BACKEND_URL + `/main-page/fetch-pets?type=${type}&status=active`,
 				{
 					headers: {
 						Authorization: `Bearer ${token}`,
