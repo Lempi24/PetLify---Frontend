@@ -110,7 +110,7 @@ const LostForm = () => {
 			}
 
 			const response = await axios.post(
-				import.meta.env.VITE_BACKEND_URL + '/main-page/create-lost-form',
+				import.meta.env.VITE_BACKEND_URL + '/reports/create-lost-form',
 				formData,
 				{
 					headers: {
@@ -123,11 +123,9 @@ const LostForm = () => {
 			toast.success('Zgłoszenie zostało wysłane');
 			reset();
 			navigate('/main-page');
-
 		} catch (error) {
 			toast.error('Wystąpił błąd przy wysyłaniu formularza');
 			console.error(error);
-
 		} finally {
 			setLoading(false);
 		}

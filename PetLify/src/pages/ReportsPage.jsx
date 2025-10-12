@@ -29,7 +29,7 @@ const ReportsPage = () => {
 		}
 		try {
 			const response = await axios.get(
-				import.meta.env.VITE_BACKEND_URL + `/user-reports/fetch-reports`,
+				import.meta.env.VITE_BACKEND_URL + `/reports/fetch-reports`,
 				{
 					headers: {
 						Authorization: `Bearer ${token}`,

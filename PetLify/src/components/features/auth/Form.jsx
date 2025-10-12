@@ -31,7 +31,7 @@ const Form = () => {
 			setLoading(true);
 			try {
 				const response = await axios.post(
-					import.meta.env.VITE_BACKEND_URL + '/login',
+					import.meta.env.VITE_BACKEND_URL + '/auth/login',
 					{
 						email: data.userMail,
 						password: data.userPassword,
@@ -53,7 +53,7 @@ const Form = () => {
 			}
 		} else {
 			try {
-				await axios.post(import.meta.env.VITE_BACKEND_URL + '/register', {
+				await axios.post(import.meta.env.VITE_BACKEND_URL + '/auth/register', {
 					email: data.userMail,
 					password: data.userPassword,
 				});

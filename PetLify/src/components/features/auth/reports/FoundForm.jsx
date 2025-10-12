@@ -9,7 +9,7 @@ import { LoadScript, Autocomplete } from '@react-google-maps/api';
 const FoundForm = () => {
 	const MAX_PHOTOS = 5;
 	const navigate = useNavigate();
-	
+
 	const {
 		register,
 		handleSubmit,
@@ -136,7 +136,7 @@ const FoundForm = () => {
 			}
 
 			const response = await axios.post(
-				import.meta.env.VITE_BACKEND_URL + '/main-page/create-found-form',
+				import.meta.env.VITE_BACKEND_URL + '/reports/create-found-form',
 				formData,
 				{
 					headers: {
