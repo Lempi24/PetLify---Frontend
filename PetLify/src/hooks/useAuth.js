@@ -2,39 +2,41 @@ import { useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 
 const useAuth = () => {
-	const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null);
 
-	const updateUserFromToken = () => {
-		try {
-			const token = localStorage.getItem('token');
-			if (token) {
-				const decodedToken = jwtDecode(token);
-				console.log('Decoded token:', decodedToken);
-				setUser({
-					email: decodedToken.email,
-					role: decodedToken.role,
-					token: token,
-				});
-			} else {
-				setUser(null);
-			}
-		} catch (error) {
-			console.error('Failed to decode token:', error);
-			setUser(null);
-		}
-	};
+  const updateUserFromToken = () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const decoded = jwtDecode(token);
+        setUser({
+          email: decoded.email,
+          role: decoded.role,
+          token,
+        });
+      } else {
+        setUser(null);
+      }
+    } catch (err) {
+      console.error('Failed to decode token:', err);
+      setUser(null);
+    }
+  };
 
-	useEffect(() => {
-		updateUserFromToken();
+  useEffect(() => {
+    updateUserFromToken();
+    const handler = () => updateUserFromToken();
+    window.addEventListener('storage', handler);
+    window.addEventListener('tokenChange', handler);
+    return () => {
+      window.removeEventListener('storage', handler);
+      window.removeEventListener('tokenChange', handler);
+    };
+  }, []);
 
-		window.addEventListener('storage', updateUserFromToken);
-		window.addEventListener('tokenChange', updateUserFromToken);
-
-		return () => {
-			window.removeEventListener('storage', updateUserFromToken);
-			window.removeEventListener('tokenChange', updateUserFromToken);
-		};
-	}, []);
-	return { user };
+  
+  // Zwracamy zarówno { user } jak i rozpakowane pola usera.
+  return { user, ...(user || {}) };
 };
+
 export default useAuth;

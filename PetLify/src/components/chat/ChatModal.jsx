@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-// helpers
 function fmt(ts) {
   const d = new Date(ts);
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -24,6 +23,8 @@ export default function ChatModal({
   currentUserId,
   messages,
   onSend, // (text, attachments)
+ 
+  showTyping = false,
 }) {
   const [text, setText] = useState("");
   const [otherTyping, setOtherTyping] = useState(false);
@@ -37,7 +38,10 @@ export default function ChatModal({
 
   // posortowane + separatory
   const sorted = useMemo(
-    () => [...(messages || [])].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
+    () =>
+      [...(messages || [])].sort(
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      ),
     [messages]
   );
 
@@ -46,7 +50,8 @@ export default function ChatModal({
     let last = 0;
     for (const m of sorted) {
       const t = new Date(m.createdAt).getTime();
-      if (last !== 0 && t - last > 10 * 60 * 1000) out.push({ type: "sep", at: m.createdAt });
+      if (last !== 0 && t - last > 10 * 60 * 1000)
+        out.push({ type: "sep", at: m.createdAt });
       out.push({ type: "msg", m });
       last = t;
     }
@@ -58,7 +63,8 @@ export default function ChatModal({
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
     setTimeout(() => taRef.current?.focus(), 0);
-  }, [isOpen, withSeps.length, otherTyping, pending.length]);
+    // nie zależymy od otherTyping, żeby kropki nie wywoływały przewijania
+  }, [isOpen, withSeps.length, pending.length]);
 
   // załączniki
   function openFilePicker() {
@@ -68,7 +74,9 @@ export default function ChatModal({
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     const next = files.map((f) => ({
-      id: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+      id:
+        crypto?.randomUUID?.() ??
+        String(Date.now() + Math.random()),
       name: f.name,
       type: f.type || "application/octet-stream",
       size: f.size,
@@ -95,8 +103,12 @@ export default function ChatModal({
     onSend(text.trim(), pending);
     setText("");
     setPending([]);
-    setOtherTyping(true);
-    setTimeout(() => setOtherTyping(false), 1200);
+
+    // Kropki tylko jeśli włączone flagą
+    if (showTyping) {
+      setOtherTyping(true);
+      setTimeout(() => setOtherTyping(false), 1200);
+    }
   }
 
   if (!isOpen) return null;
@@ -216,7 +228,8 @@ export default function ChatModal({
             );
           })}
 
-          {otherTyping && (
+          {/* Kropki tylko, gdy showTyping = true */}
+          {showTyping && otherTyping && (
             <div className="flex my-2 justify-start">
               <div className="max-w-[78%] px-3 py-2 rounded-2xl bg-user-options-fill rounded-bl-md">
                 <span className="inline-flex items-center gap-1">
@@ -307,7 +320,7 @@ export default function ChatModal({
               </svg>
             </button>
 
-            {/* ZAŁĄCZ – TEN SAM STYL CO „WYŚLIJ” */}
+            {/* ZAŁĄCZ */}
             <button
               className="w-10 h-10 rounded-full grid place-items-center bg-cta text-main font-extrabold"
               onClick={openFilePicker}

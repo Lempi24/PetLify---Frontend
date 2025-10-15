@@ -1,4 +1,3 @@
-// src/pages/ChatsPage.jsx
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import SubPagesNav from "../components/ui/SubPagesNav";
@@ -26,108 +25,83 @@ export default function ChatsPage() {
   const [openThread, setOpenThread] = useState(null);
   const [messages, setMessages] = useState([]);
 
-  const loggedUser = useAuth();
-  const currentUserId = loggedUser?.email || "me";
+  //  poprawne rozbicie hooka
+  const { user: authUser } = useAuth();
+  const currentUserId = authUser?.email || "me";
 
-  // wczytaj listę wątków z serwera
   useEffect(() => {
     fetchThreads().then(setThreads).catch(console.error);
   }, []);
 
-  // nasłuch powiadomień z Socketa (nowa wiadomość / usunięcie wątku)
   useEffect(() => {
     const socket = getSocket();
 
-    socket.on("chat:notify", ({ threadId, preview, deleted }) => {
+    socket.on('chat:notify', ({ threadId, preview, deleted }) => {
       if (deleted) {
-        // drugi użytkownik usunął wątek – usuń z listy i ew. zamknij modal
-        setThreads((prev) => prev.filter((t) => t.id !== threadId));
+        setThreads(prev => prev.filter(t => t.id !== threadId));
         if (openThread?.id === threadId) {
           setOpenThread(null);
           setMessages([]);
         }
         return;
       }
-
-      // aktualizacja ostatniej wiadomości + przesuń wątek na początek
-      if (preview) {
-        setThreads((prev) => {
-          const idx = prev.findIndex((t) => t.id === threadId);
-          if (idx < 0) return prev;
-          const next = [...prev];
-          next[idx] = {
-            ...next[idx],
-            last_message:
-              preview.text || (preview.attachments?.[0]?.name || "Załącznik"),
-            last_time: preview.createdAt,
-          };
-          const [t] = next.splice(idx, 1);
-          return [t, ...next];
-        });
-      }
+      setThreads((prev) => {
+        const next = [...prev];
+        const i = next.findIndex(t => t.id === threadId);
+        if (i >= 0 && preview) {
+          next[i] = { ...next[i], last_message: preview.text || (preview.attachments?.[0]?.name || 'Załącznik'), last_time: preview.createdAt };
+        }
+        return next.sort((a, b) => new Date(b.last_time || b.created_at) - new Date(a.last_time || a.created_at));
+      });
     });
 
     return () => {
-      socket.off("chat:notify");
+      socket.off('chat:notify');
     };
   }, [openThread?.id]);
 
-  // otwórz wątek +  dołącz do pokoju + wczytaj historię
   async function handleOpenThread(thread) {
     setOpenThread(thread);
     setMessages(await fetchMessages(thread.id));
-
     const socket = getSocket();
-    socket.emit("chat:join", { threadId: thread.id });
-
-    socket.off("chat:newMessage");
-    socket.on("chat:newMessage", (msg) => {
+    socket.emit('chat:join', { threadId: thread.id });
+    socket.off('chat:newMessage');
+    socket.on('chat:newMessage', (msg) => {
       if (msg.threadId !== thread.id) return;
-      // zmapuj payload z Socketa do kształtu jak w DB, żeby ChatModal miał spójne pola
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: msg.id,
-          sender_email: msg.senderEmail,
-          text: msg.text,
-          attachments: msg.attachments,
-          created_at: msg.createdAt,
-        },
-      ]);
+      setMessages((prev) => [...prev, {
+        id: msg.id,
+        sender_email: msg.senderEmail,
+        text: msg.text,
+        attachments: msg.attachments,
+        created_at: msg.createdAt
+      }]);
     });
   }
 
-  // wyślij wiadomość (socket -> http fallback)
   async function handleSend(text, attachments = []) {
     if (!openThread) return;
     const socket = getSocket();
-
     if (socket.connected) {
-      socket.emit("chat:send", { threadId: openThread.id, text, attachments });
+      socket.emit('chat:send', { threadId: openThread.id, text, attachments });
     } else {
       const msg = await sendMessageHttp(openThread.id, { text, attachments });
-      // tu znowu zmapuj do kształtu DB, żeby UI było spójne
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: msg.id,
-          sender_email: msg.senderEmail || msg.sender_email || currentUserId,
-          text: msg.text,
-          attachments: msg.attachments,
-          created_at: msg.createdAt || msg.created_at,
-        },
-      ]);
+      setMessages((prev) => [...prev, {
+        id: msg.id,
+        sender_email: msg.senderEmail || msg.sender_email || currentUserId,
+        text: msg.text,
+        attachments: msg.attachments,
+        created_at: msg.createdAt || msg.created_at
+      }]);
     }
   }
 
-  // usuń wątek (z bazy) – obsługiwane również w modalu
   async function handleDelete(threadId, e) {
     e?.stopPropagation();
     const yes = window.confirm("Usunąć ten wątek wraz z wiadomościami?");
     if (!yes) return;
     try {
       await deleteThread(threadId);
-      setThreads((prev) => prev.filter((t) => t.id !== threadId));
+      setThreads(prev => prev.filter(t => t.id !== threadId));
       if (openThread?.id === threadId) {
         setOpenThread(null);
         setMessages([]);
@@ -138,14 +112,13 @@ export default function ChatsPage() {
     }
   }
 
-  // tu wersja wywoływana z przycisku w ChatModal (bez eventu, ale ta sama logika)
   async function handleDeleteFromModal() {
     if (!openThread) return;
     const yes = window.confirm("Usunąć ten wątek wraz z wiadomościami?");
     if (!yes) return;
     try {
       await deleteThread(openThread.id);
-      setThreads((prev) => prev.filter((t) => t.id !== openThread.id));
+      setThreads(prev => prev.filter(t => t.id !== openThread.id));
       setOpenThread(null);
       setMessages([]);
     } catch (err) {
@@ -173,10 +146,7 @@ export default function ChatsPage() {
 
         <div className="flex flex-col gap-4 pb-10 h-full pr-2 lg:overflow-y-auto custom-scroll">
           {threads.length === 0 && (
-            <div className="text-accent">
-              Brak rozmów. Otwórz Chat z poziomu ogłoszenia i wyślij pierwszą
-              wiadomość.
-            </div>
+            <div className="text-accent">Brak rozmów. Otwórz Chat z poziomu ogłoszenia i wyślij pierwszą wiadomość.</div>
           )}
 
           {threads.map((c) => (
@@ -187,12 +157,10 @@ export default function ChatsPage() {
             >
               <div className="absolute -left-2 top-2 bottom-2 w-2 rounded-xl bg-cta" />
 
-              {/* data/godzina */}
               <div className="absolute right-3 top-3 text-sm bg-black/30 text-text rounded-md px-2 py-1">
                 {fmtIso(c.last_time || c.created_at)}
               </div>
 
-              {/* przycisk usuń */}
               <button
                 className="absolute right-3 bottom-3 text-text/80 hover:text-negative"
                 title="Usuń wątek"
@@ -218,9 +186,7 @@ export default function ChatsPage() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-bold text-lg truncate">
-                      {c.subject || "Zwierzak"}
-                    </p>
+                    <p className="font-bold text-lg truncate">{c.subject || "Zwierzak"}</p>
                   </div>
                   <p className="text-cta text-sm">
                     Rozmowa między: {c.owner_email} ↔ {c.partner_email}
@@ -237,22 +203,17 @@ export default function ChatsPage() {
         <ChatModal
           isOpen={true}
           onClose={() => setOpenThread(null)}
-          partnerName={
-            openThread.owner_email === currentUserId
-              ? openThread.partner_email
-              : openThread.owner_email
-          }
+          partnerName={openThread.owner_email === currentUserId ? openThread.partner_email : openThread.owner_email}
           topicName={openThread.subject || "Zwierzak"}
           currentUserId={currentUserId}
-          messages={messages.map((m) => ({
+          messages={messages.map(m => ({
             id: m.id,
             senderId: m.sender_email,
             text: m.text,
             createdAt: m.createdat || m.created_at || m.createdAt,
-            attachments: m.attachments,
+            attachments: m.attachments
           }))}
           onSend={handleSend}
-          // ⬇⬇⬇ PRZYWRÓCONO USUWANIE z poziomu modalu
           onDelete={handleDeleteFromModal}
         />
       )}
