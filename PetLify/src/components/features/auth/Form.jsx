@@ -50,7 +50,20 @@ const Form = () => {
 					'Login failed:',
 					error.response?.data?.message || 'An error occurred.'
 				);
-				toast.error('Niepoprawny email lub hasło. Spróbuj ponownie.');
+
+				const message = error.response?.data?.message;
+
+				if (message === 'Account not verified. Please check your email.') {
+					toast.warning(
+						'Konto nie jest jeszcze zweryfikowane. Sprawdź swoją skrzynkę e-mail.'
+					);
+				} else if (message === 'Invalid credentials') {
+					toast.error('Niepoprawny email lub hasło. Spróbuj ponownie.');
+				} else {
+					toast.error(
+						'Wystąpił błąd podczas logowania. Spróbuj ponownie później.'
+					);
+				}
 			}
 		} else {
 			try {
@@ -60,7 +73,9 @@ const Form = () => {
 				});
 				reset();
 				setIsLoging(true);
-				toast.success('Rejestracja udana! Teraz możesz się zalogować.');
+				toast.success(
+					'Rejestracja udana! Sprawdź swoją skrzynkę e-mail i potwierdź konto.'
+				);
 			} catch (error) {
 				if (error.response && error.response.status === 409) {
 					toast.error('Użytkownik o podanym emailu już istnieje.');
