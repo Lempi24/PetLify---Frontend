@@ -93,6 +93,11 @@ const LostForm = () => {
 		const token = localStorage.getItem('token');
 		console.log('Token:', token);
 
+		if (data.petAgeValue && data.petAgeUnit) {
+			const unitText = data.petAgeUnit === 'months' ? 'miesięcy' : 'lat';
+			data.petAge = `${data.petAgeValue} ${unitText}`;
+		}
+		
 		console.log('Form data przed wysyłką:', data);
 
 		try {
@@ -104,7 +109,7 @@ const LostForm = () => {
 					Array.from(data.photos).forEach((file) => {
 						formData.append('photos', file);
 					});
-				} else {
+				} else if (key != 'petAgeValue' && key != 'petAgeUnit') {
 					formData.append(key, data[key]);
 				}
 			}
@@ -129,6 +134,40 @@ const LostForm = () => {
 		} finally {
 			setLoading(false);
 		}
+	};
+
+	const validateDate = (dateString) => {
+		if (!dateString) return true;
+		
+		const selectedDate = new Date(dateString);
+		const today = new Date();
+		const minDate = new Date();
+		minDate.setDate(today.getDate() - 30);
+		
+		selectedDate.setHours(0, 0, 0, 0);
+		today.setHours(0, 0, 0, 0);
+		minDate.setHours(0, 0, 0, 0);
+		
+		if (selectedDate > today) {
+			return 'Data nie może być z przyszłości';
+		}
+		
+		if (selectedDate < minDate) {
+			return 'Data nie może być starsza niż 30 dni';
+		}
+		
+		return true;
+	};
+
+	const getMinDate = () => {
+		const minDate = new Date();
+		minDate.setDate(minDate.getDate() - 30);
+		return minDate.toISOString().split('T')[0];
+	};
+
+	const getMaxDate = () => {
+		const maxDate = new Date();
+		return maxDate.toISOString().split('T')[0];
 	};
 
 	return (
@@ -213,12 +252,38 @@ const LostForm = () => {
 						<label className='block text-sm font-medium mb-1'>
 							Podaj wiek zwierzęcia
 						</label>
-						<FormInput
-							type='text'
-							placeholder='Np. 5 miesięcy, 3 lata'
-							{...register('petAge')}
-							error={errors.petAge}
-						/>
+						<div className='flex gap-0 rounded-md overflow-hidden'>
+							<div className='flex-1'>
+								<FormInput
+									type='number'
+									placeholder='Np. 5'
+									{...register('petAgeValue', {
+										min: { value: 0, message: 'Wiek nie może być ujemny' },
+										validate: {
+											maxMonths: (value) => {
+												const unit = watch('petAgeUnit');
+												if (unit === 'months' && value > 11) {
+													return 'Maksymalnie 11 miesięcy';
+												}
+												return true;
+											}
+										}
+									})}
+									error={errors.petAgeValue}
+									className='rounded-r-none border-r-0'
+								/>
+							</div>
+							<select
+								{...register('petAgeUnit')}
+								className='w-32 px-3 py-3 border-2 border-cta border-l-0 rounded-r-md bg-secondary text-text'
+							>
+								<option value='months'>miesięcy</option>
+								<option value='years'>lat</option>
+							</select>
+						</div>
+						{errors.petAgeValue && (
+							<p className='text-negative text-xs mt-1'>{errors.petAgeValue.message}</p>
+						)}
 					</div>
 
 					<div>
@@ -238,13 +303,18 @@ const LostForm = () => {
 
 					<div>
 						<label className='block text-sm font-medium mb-1'>
-							Podaj datę zaginięcia
+							Podaj datę zaginięcia (do 30 dni wstecz)
 						</label>
 						<FormInput
 							type='date'
 							placeholder='Data zaginięcia'
-							{...register('lostDate', { required: 'Podaj datę zaginięcia' })}
+							{...register('lostDate', {
+								required: 'Podaj datę zaginięcia',
+								validate: validateDate
+							})}
 							error={errors.lostDate}
+							min={getMinDate()}
+							max={getMaxDate()}
 						/>
 					</div>
 
