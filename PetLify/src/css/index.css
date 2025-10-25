@@ -68,3 +68,17 @@
 	color: var(--color-cta) !important;
 	opacity: 1 !important;
 }
+
+@layer base {
+	input[type='date']::-webkit-datetime-edit-text,
+	input[type='date']::-webkit-datetime-edit-month-field,
+	input[type='date']::-webkit-datetime-edit-day-field,
+	input[type='date']::-webkit-datetime-edit-year-field {
+		@apply text-text opacity-100;
+	}
+
+	input[type='date'] {
+		@apply bg-secondary border border-cta text-text rounded-md;
+		color-scheme: dark; 
+	}
+}

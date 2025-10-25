@@ -1,13 +1,14 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import SubPagesNav from '../components/ui/SubPagesNav';
-import dogo from '../img/burek.jpg';
 import SettingsButtonContainer from '../components/ui/SettingsButtonContainer';
 import BurgerMenu from '../components/ui/BurgerMenu';
 import { useUser } from '../context/UserContext';
 import SettingsPanel from '../components/ui/SettingsPanel';
+import PetProfiles from '../components/ui/PetProfiles';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+
 const SettingsPage = () => {
 	const { user } = useUser();
 	console.log('Aktualny stan obiektu user:', user);
@@ -22,10 +23,12 @@ const SettingsPage = () => {
 	});
 	const [defaultLocation, setDefaultLocation] = useState(null);
 	const [initialSettings, setInitialSettings] = useState(null);
+
 	const isChanged =
 		initialSettings &&
 		settings &&
 		JSON.stringify(settings) !== JSON.stringify(initialSettings);
+
 	const changeNotifications = async () => {
 		try {
 			const token = localStorage.getItem('token');
@@ -58,6 +61,7 @@ const SettingsPage = () => {
 			toast.error('Nie udało się zapisać ustawień. Spróbuj ponownie.');
 		}
 	};
+
 	const fetchUserSettings = async () => {
 		try {
 			const token = localStorage.getItem('token');
@@ -92,9 +96,11 @@ const SettingsPage = () => {
 			toast.error('Nie udało się pobrać ustawień. Spróbuj ponownie.');
 		}
 	};
+
 	useEffect(() => {
 		fetchUserSettings();
 	}, []);
+
 	const deleteUser = async () => {
 		try {
 			const token = localStorage.getItem('token');
@@ -122,17 +128,20 @@ const SettingsPage = () => {
 			toast.error('Usunięcie konta nie powiodło się. Spróbuj ponownie.');
 		}
 	};
+
 	const radioStateHandle = (settingKey) => {
 		setSettings((prevSettings) => ({
 			...prevSettings,
 			[settingKey]: !prevSettings[settingKey],
 		}));
 	};
+
 	useEffect(() => {
 		if (initialSettings === null) {
 			setInitialSettings(settings);
 		}
 	}, [initialSettings, settings]);
+
 	return (
 		<div className='relative flex'>
 			<SubPagesNav currentPath={currentPath} isBurgerOpen={isBurgerOpen} />
@@ -144,26 +153,9 @@ const SettingsPage = () => {
 						handleBurger={() => setIsBurgerOpen((prev) => !prev)}
 					/>
 				</div>
-				<div className='space-y-3'>
-					<p className='text-cta'>Profil zwierzaka</p>
-					<button className='bg-main flex items-center rounded-xl w-full py-1 px-3 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] cursor-pointer'>
-						<div className='w-[70px] h-[60px] rounded-full overflow-hidden'>
-							<img
-								src={dogo}
-								alt='imię'
-								className='w-full h-full object-cover rounded-full'
-							/>
-						</div>
-						<div className='text-left ml-4 w-full min-w-0'>
-							<h2 className='font-bold text-2xl'>Burek</h2>
-							<p className=''>Gatunek: Pies</p>
-							<p className=''>Rasa: Mieszaniec</p>
-							<p className='truncate'>
-								Cechy: Brązowa sierść, biała łata na sierści
-							</p>
-						</div>
-					</button>
-				</div>
+				
+				<PetProfiles />
+
 				<div>
 					<p className='text-cta'>Konto</p>
 					<div className='mt-3 space-y-1'>
@@ -179,38 +171,38 @@ const SettingsPage = () => {
 								onClose={() => setActivePanel(null)}
 							/>
 						)}
+						
+						<>
+							<SettingsButtonContainer
+								pMessage={
+									user?.first_name + ' ' + user?.surname || 'Brak danych'
+								}
+								subMessage={user?.phone || 'Brak numeru telefonu'}
+								btnMessage={'Zmień'}
+								btnType={'button'}
+								negative={false}
+								onAction={() => setActivePanel('editProfile')}
+							/>
 
-						{(!activePanel || activePanel === 'editLocation') && (
-							<>
-								<SettingsButtonContainer
-									pMessage={
-										user?.first_name + ' ' + user?.surname || 'Brak danych'
-									}
-									subMessage={user?.phone || 'Brak numeru telefonu'}
-									btnMessage={'Zmień'}
-									btnType={'button'}
-									negative={false}
-									onAction={() => setActivePanel('editProfile')}
-								/>
+							<SettingsButtonContainer
+								pMessage={'Zmień hasło'}
+								btnMessage={'Zmień'}
+								btnType={'button'}
+								negative={false}
+								onAction={() => setActivePanel('editPassword')}
+							/>
 
-								<SettingsButtonContainer
-									pMessage={'Zmień hasło'}
-									btnMessage={'Zmień'}
-									btnType={'button'}
-									negative={false}
-									onAction={() => setActivePanel('editPassword')}
-								/>
-								<SettingsButtonContainer
-									pMessage={'Usuń konto'}
-									btnMessage={'Usuń'}
-									btnType={'button'}
-									negative={true}
-									onAction={() => setActivePanel('deleteAccount')}
-								/>
-							</>
-						)}
+							<SettingsButtonContainer
+								pMessage={'Usuń konto'}
+								btnMessage={'Usuń'}
+								btnType={'button'}
+								negative={true}
+								onAction={() => setActivePanel('deleteAccount')}
+							/>
+						</>
 					</div>
 				</div>
+				
 				<div>
 					<p className='text-cta'>Powiadomienia</p>
 					<div className='mt-3 space-y-1'>
@@ -244,6 +236,7 @@ const SettingsPage = () => {
 						</button>
 					)}
 				</div>
+
 				<div>
 					<p className='text-cta'>Aplikacja</p>
 					<div className='mt-3 space-y-1'>
@@ -264,6 +257,7 @@ const SettingsPage = () => {
 					</div>
 				</div>
 			</div>
+
 			{activePanel === 'deleteAccount' && (
 				<div
 					className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center backdrop-blur-2xl w-full h-full z-1000`}
@@ -296,4 +290,5 @@ const SettingsPage = () => {
 		</div>
 	);
 };
+
 export default SettingsPage;
