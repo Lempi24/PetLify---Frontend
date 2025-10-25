@@ -17,7 +17,6 @@ const petSizeTypes = [
     { label: 'Duży', value: 'large' },
 ];
 
-// Helper functions to get display labels
 const getSpeciesLabel = (value) => {
     const species = petSpeciesTypes.find(s => s.value === value);
     return species ? species.label : 'Nieznany gatunek';
@@ -45,7 +44,7 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
 
     useEffect(() => {
         if (editPet) {
-            console.log('Editing pet data:', editPet); // Debug log
+            console.log('Editing pet data:', editPet);
             
             let ageValue = '';
             let ageUnit = 'months';
@@ -58,13 +57,12 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
                 }
             }
             
-            // Używamy pet_species_type z backendu
             setFormData({
                 petName: editPet.pet_name || '',
                 petAgeValue: ageValue,
                 petAgeUnit: ageUnit,
                 petSize: editPet.pet_size || '',
-                petSpecies: editPet.pet_species_type || editPet.pet_species || '', // Używamy pet_species_type
+                petSpecies: editPet.pet_species_type || editPet.pet_species || '', 
                 petBreed: editPet.pet_breed || '',
                 petColor: editPet.pet_color || '',
             });
@@ -77,7 +75,7 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
             ...prev,
             [field]: value
         }));
-        // Clear error when user starts typing
+
         if (errors[field]) {
             setErrors(prev => ({
                 ...prev,
@@ -96,7 +94,6 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
             return;
         }
         setPhotos(prev => [...prev, ...files]);
-        // Clear photo error
         if (errors.photos) {
             setErrors(prev => ({
                 ...prev,
@@ -165,7 +162,7 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
             submitData.append('petName', formData.petName);
             submitData.append('petAge', ageString);
             submitData.append('petSize', formData.petSize);
-            submitData.append('petSpecies', formData.petSpecies); // Wysyłamy jako petSpecies
+            submitData.append('petSpecies', formData.petSpecies);
             submitData.append('petBreed', formData.petBreed);
             submitData.append('petColor', formData.petColor);
 
@@ -212,11 +209,9 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
         } catch (error) {
             console.error('Błąd operacji profilu:', error);
             
-            // Handle specific field errors from backend
             if (error.response?.data?.message) {
                 const backendError = error.response.data.message;
                 
-                // Map backend errors to specific fields
                 if (backendError.includes('zdjęć')) {
                     setErrors({ photos: backendError });
                 } else if (backendError.includes('Limit')) {
@@ -253,7 +248,6 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* General Error */}
                     {errors.general && (
                         <div className="bg-negative bg-opacity-20 border border-negative rounded-lg p-3">
                             <p className="text-negative text-sm">{errors.general}</p>
