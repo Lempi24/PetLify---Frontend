@@ -14,6 +14,7 @@ const INITIAL_FILTERS = {
   location: '',
   ageFrom: '',
   ageTo: '',
+  ageUnit: 'years', // NEW: lata | miesiące
   sort: 'newest',
 };
 
@@ -26,6 +27,7 @@ function sanitizeAgeInt(v) {
   if (!Number.isFinite(n)) return '';
   return String(Math.max(1, n));
 }
+
 const BLOCKED_KEYS = new Set(['-', '+', 'e', 'E', '.', ',', ' ']);
 
 // ---- Gatunek/Rasa: tylko litery (w tym PL) i spacje ----
@@ -43,9 +45,9 @@ const MainPage = () => {
     formChoiceActive: false,
     formActive: false,
   });
-
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedPet, setSelectedPet] = useState(null);
+
   const [petsData, setPetsData] = useState([]);
   const [allPetsData, setAllPetsData] = useState([]);
 
@@ -53,13 +55,15 @@ const MainPage = () => {
   const [appliedFilters, setAppliedFilters] = useState(null);
 
   const petSpeciesTypes = [
-    { value: 'dog',    label: 'Pies' },
-    { value: 'cat',    label: 'Kot' },
-    { value: 'bird',   label: 'Ptak' },
-    { value: 'rodent', label: 'Gryzoń' },
-    { value: 'reptile',label: 'Gad' },
-    { value: 'other',  label: 'Inne' },
-  ];
+  { value: '', label: '-- Wybierz --' },
+  { value: 'dog', label: 'Pies' },
+  { value: 'cat', label: 'Kot' },
+  { value: 'bird', label: 'Ptak' },
+  { value: 'rodent', label: 'Gryzoń' },
+  { value: 'reptile', label: 'Gad' },
+  { value: 'other', label: 'Inne' },
+];
+
 
   const fetchPetsData = async (type) => {
     setActiveTab(type);
@@ -96,7 +100,7 @@ const MainPage = () => {
 
   useEffect(() => {
     fetchPetsData('lost');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogOut = () => {
@@ -111,16 +115,20 @@ const MainPage = () => {
 
   const onApplyFilters = async () => {
     const token = localStorage.getItem('token');
-    if (!token) { navigate('/'); return; }
-
-    // --- Walidacja: jeśli gatunek lub rasa zawierają coś innego niż litery/spacje,
-    // to nie wołamy backendu — od razu pokazujemy "Brak wyników..."
-    if (!isLettersOrEmpty(filters.species) || !isLettersOrEmpty(filters.breed)) {
-      setAppliedFilters(null);
-      setAllPetsData([]);
-      setPetsData([]);   // to pokaże komunikat jak przy mieście
+    if (!token) {
+      navigate('/');
       return;
     }
+
+    // --- Walidacja: jeśli rasa zawiera coś innego niż litery/spacje,
+    // to nie wołamy backendu — od razu pokazujemy "Brak wyników..."
+    if (!isLettersOrEmpty(filters.breed)) {
+      setAppliedFilters(null);
+      setAllPetsData([]);
+      setPetsData([]);
+      return;
+    }
+
 
     const sortMap = {
       newest: 'newest',
@@ -132,12 +140,13 @@ const MainPage = () => {
     const params = {
       type: activeTab,
       status: 'active',
-      species:    filters.species?.trim()  || undefined,
-      breed:      filters.breed?.trim()    || undefined,
+      species: filters.species || undefined, // wysyłamy kod: dog/cat/...
+      breed: filters.breed?.trim() || undefined,
       cityStreet: filters.location?.trim() || undefined,
-      ageFrom:    filters.ageFrom ? Math.max(1, parseInt(filters.ageFrom, 10) || 1) : undefined,
-      ageTo:      filters.ageTo   ? Math.max(1, parseInt(filters.ageTo,   10) || 1) : undefined,
-      sort:       sortMap[filters.sort] || 'newest',
+      ageFrom: filters.ageFrom ? Math.max(1, parseInt(filters.ageFrom, 10) || 1) : undefined,
+      ageTo: filters.ageTo ? Math.max(1, parseInt(filters.ageTo, 10) || 1) : undefined,
+      ageUnit: filters.ageUnit || 'years', // NEW
+      sort: sortMap[filters.sort] || 'newest',
     };
 
     try {
@@ -147,10 +156,12 @@ const MainPage = () => {
       );
 
       setAppliedFilters(params);
+
       const items = (data || []).map((pet) => {
         const map = petSpeciesTypes.find((s) => s.value === pet.pet_species);
         return map ? { ...pet, pet_species: map.label } : pet;
       });
+
       setAllPetsData(items);
       setPetsData(items);
     } catch (e) {
@@ -244,12 +255,17 @@ const MainPage = () => {
 
           {/* Panel użytkownika */}
           <div
-            className={`absolute right-0 top-[calc(50%-25px)] bg-user-options-fill w-full max-w-[500px] md:w-1/2 lg:w-1/2 z-0 flex flex-col gap-4 rounded-3xl p-3 transition-all duration-300 ease-in-out origin-right ${userPanelActive ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
+            className={`absolute right-0 top-[calc(50%-25px)] bg-user-options-fill w-full max-w-[500px] md:w-1/2 lg:w-1/2 z-0 flex flex-col gap-4 rounded-3xl p-3 transition-all duration-300 ease-in-out origin-right ${
+              userPanelActive ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
+            }`}
           >
             <div>
-              <p className='text-xl font-bold'>{user?.first_name ? user.first_name + ' ' + user.surname : 'Użytkownik'}</p>
+              <p className='text-xl font-bold'>
+                {user?.first_name ? user.first_name + ' ' + user.surname : 'Użytkownik'}
+              </p>
               <p className='text-sm'>{loggedInUser?.email}</p>
             </div>
+
             <div className='flex flex-col items-center gap-3'>
               <Link to='/chats' className='bg-cta w-9/10 rounded-2xl p-2 font-bold cursor-pointer text-center'>Moje czaty</Link>
               <Link to='/reports' className='bg-cta w-9/10 rounded-2xl p-2 font-bold cursor-pointer text-center'>Moje zgłoszenia</Link>
@@ -257,6 +273,7 @@ const MainPage = () => {
               {loggedInUser?.role == 'admin' && (
                 <Link to='/admin-panel' className='bg-cta w-9/10 rounded-2xl p-2 font-bold cursor-pointer text-center'>Panel administracyjny</Link>
               )}
+
               <div className='w-9/10'>
                 <button className='flex items-center cursor-pointer gap-3' onClick={handleLogOut}>
                   <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 640' className='fill-cta w-[25px]'>
@@ -271,18 +288,19 @@ const MainPage = () => {
 
         {/* PANEL FILTRÓW */}
         {filtersOpen && (
-          <div className='w-full bg-user-options-fill rounded-2xl p-4 grid grid-cols-1 md:grid-cols-2 gap-3'>
-            <div className='flex flex-col'>
-              <label className='text-sm text-accent mb-1'>Gatunek</label>
-              <input
-                className='rounded-xl px-3 py-2 bg-secondary text-text outline-none'
-                placeholder='np. Pies / Kot'
-                value={filters.species}
-                {...textGuards}
-                onChange={(e) => setFilters((s) => ({ ...s, species: e.target.value }))}
-                title='Używaj tylko liter i spacji'
-              />
-            </div>
+            <div className='w-full bg-user-options-fill rounded-2xl p-4 grid grid-cols-1 md:grid-cols-2 gap-3 overflow-visible'>
+            <div className='flex flex-col relative z-50'>
+            <label className='text-sm text-accent mb-1'>Gatunek</label>
+            <select
+              className='rounded-xl px-3 py-2 bg-secondary text-text outline-none relative z-50'
+              value={filters.species}
+              onChange={(e) => setFilters((s) => ({ ...s, species: e.target.value }))}
+            >
+              {petSpeciesTypes.map(opt => (
+                <option key={opt.value || 'none'} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
 
             <div className='flex flex-col'>
               <label className='text-sm text-accent mb-1'>Rasa</label>
@@ -306,8 +324,11 @@ const MainPage = () => {
               />
             </div>
 
+            {/* WIEK + jednostka */}
             <div className='flex flex-col'>
-              <label className='text-sm text-accent mb-1'>Wiek od (lata)</label>
+              <label className='text-sm text-accent mb-1'>
+                Wiek od ({filters.ageUnit === 'months' ? 'miesiące' : 'lata'})
+              </label>
               <input
                 type='number'
                 min='1'
@@ -315,7 +336,7 @@ const MainPage = () => {
                 inputMode='numeric'
                 pattern='[0-9]*'
                 className='rounded-xl px-3 py-2 bg-secondary text-text outline-none'
-                placeholder='np. 1'
+                placeholder={filters.ageUnit === 'months' ? 'np. 6' : 'np. 1'}
                 value={filters.ageFrom}
                 onKeyDown={(e) => { if (BLOCKED_KEYS.has(e.key)) e.preventDefault(); }}
                 onPaste={(e) => {
@@ -327,7 +348,9 @@ const MainPage = () => {
             </div>
 
             <div className='flex flex-col'>
-              <label className='text-sm text-accent mb-1'>Wiek do (lata)</label>
+              <label className='text-sm text-accent mb-1'>
+                Wiek do ({filters.ageUnit === 'months' ? 'miesiące' : 'lata'})
+              </label>
               <input
                 type='number'
                 min='1'
@@ -335,7 +358,7 @@ const MainPage = () => {
                 inputMode='numeric'
                 pattern='[0-9]*'
                 className='rounded-xl px-3 py-2 bg-secondary text-text outline-none'
-                placeholder='np. 10'
+                placeholder={filters.ageUnit === 'months' ? 'np. 12' : 'np. 10'}
                 value={filters.ageTo}
                 onKeyDown={(e) => { if (BLOCKED_KEYS.has(e.key)) e.preventDefault(); }}
                 onPaste={(e) => {
@@ -344,6 +367,19 @@ const MainPage = () => {
                 }}
                 onChange={(e) => setFilters((s) => ({ ...s, ageTo: sanitizeAgeInt(e.target.value) }))}
               />
+            </div>
+
+            {/* Jednostka wieku */}
+            <div className='flex flex-col md:col-span-2'>
+              <label className='text-sm text-accent mb-1'>Jednostka wieku</label>
+              <select
+                className='rounded-xl px-3 py-2 bg-secondary text-text outline-none'
+                value={filters.ageUnit}
+                onChange={(e) => setFilters((s) => ({ ...s, ageUnit: e.target.value }))}
+              >
+                <option value='years'>lata</option>
+                <option value='months'>miesiące</option>
+              </select>
             </div>
 
             <div className='flex flex-col md:col-span-2'>
@@ -383,7 +419,6 @@ const MainPage = () => {
         </div>
       </div>
 
-   
       {/* Popup wyboru typu formularza */}
       {handlePopUpState.formChoiceActive && (
         <div className='fixed w-full h-full z-100 backdrop-blur-2xl'>
@@ -391,6 +426,7 @@ const MainPage = () => {
             <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 640' className='fill-text h-[75px]'>
               <path d='M298.5 156.9C312.8 199.8 298.2 243.1 265.9 253.7C233.6 264.3 195.8 238.1 181.5 195.2C167.2 152.3 181.8 109 214.1 98.4C246.4 87.8 284.2 114 298.5 156.9zM164.4 262.6C183.3 295 178.7 332.7 154.2 346.7C129.7 360.7 94.5 345.8 75.7 313.4C56.9 281 61.4 243.3 85.9 229.3C110.4 215.3 145.6 230.2 164.4 262.6zM133.2 465.2C185.6 323.9 278.7 288 320 288C361.3 288 454.4 323.9 506.8 465.2C510.4 474.9 512 485.3 512 495.7L512 497.3C512 523.1 491.1 544 465.3 544C453.8 544 442.4 542.6 431.3 539.8L343.3 517.8C328 514 312 514 296.7 517.8L208.7 539.8C197.6 542.6 186.2 544 174.7 544C148.9 544 128 523.1 128 497.3L128 495.7C128 485.3 129.6 474.9 133.2 465.2zM485.8 346.7C461.3 332.7 456.7 295 475.6 262.6C494.5 230.2 529.6 215.3 554.1 229.3C578.6 243.3 583.2 281 564.3 313.4C545.4 345.8 510.3 360.7 485.8 346.7zM374.1 253.7C341.8 243.1 327.2 199.8 341.5 156.9C355.8 114 393.6 87.8 425.9 98.4C458.2 109 472.8 152.3 458.5 195.2C444.2 238.1 406.4 264.3 374.1 253.7z' />
             </svg>
+
             <button
               onClick={() => setHandlePopUpState({ formChoiceActive: false, formActive: false })}
               className='absolute right-5 cursor-pointer'
