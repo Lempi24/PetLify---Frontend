@@ -5,11 +5,11 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useState, useEffect, useRef } from 'react';
 import { LoadScript, Autocomplete } from '@react-google-maps/api';
-
+import ReCAPTCHA from 'react-google-recaptcha';
 const FoundForm = () => {
 	const MAX_PHOTOS = 5;
 	const navigate = useNavigate();
-
+	const recaptchaRef = useRef(null);
 	const {
 		register,
 		handleSubmit,
@@ -105,28 +105,33 @@ const FoundForm = () => {
 
 	const validateDate = (dateString) => {
 		if (!dateString) return true;
-		
+
 		const selectedDate = new Date(dateString);
 		const today = new Date();
 		const minDate = new Date();
 		minDate.setDate(today.getDate() - 30);
-		
+
 		selectedDate.setHours(0, 0, 0, 0);
 		today.setHours(0, 0, 0, 0);
 		minDate.setHours(0, 0, 0, 0);
-		
+
 		if (selectedDate > today) {
 			return 'Data nie może być z przyszłości';
 		}
-		
+
 		if (selectedDate < minDate) {
 			return 'Data nie może być starsza niż 30 dni';
 		}
-		
+
 		return true;
 	};
 
 	const onSubmit = async (data) => {
+		const recaptchaValue = recaptchaRef.current?.getValue();
+		if (!recaptchaValue) {
+			toast.error('Proszę potwierdzić, że nie jesteś robotem.');
+			return;
+		}
 		console.log('onSubmit został wywołany!');
 		const token = localStorage.getItem('token');
 		console.log('Token:', token);
@@ -152,7 +157,7 @@ const FoundForm = () => {
 		try {
 			setLoading(true);
 			const formData = new FormData();
-
+			formData.append('recaptchaToken', recaptchaValue);
 			for (const key in data) {
 				if (key === 'photos' && data.photos?.length > 0) {
 					Array.from(data.photos).forEach((file) => {
@@ -175,10 +180,12 @@ const FoundForm = () => {
 
 			console.log('Success:', response);
 			toast.success('Zgłoszenie zostało wysłane');
+			recaptchaRef.current?.reset();
 			reset();
 			navigate('/main-page');
 		} catch (error) {
 			toast.error('Wystąpił błąd przy wysyłaniu formularza');
+			recaptchaRef.current?.reset();
 			console.error(error);
 		} finally {
 			setLoading(false);
@@ -291,8 +298,8 @@ const FoundForm = () => {
 													return 'Maksymalnie 11 miesięcy';
 												}
 												return true;
-											}
-										}
+											},
+										},
 									})}
 									error={errors.petAgeValue}
 									className='rounded-r-none border-r-0'
@@ -307,7 +314,9 @@ const FoundForm = () => {
 							</select>
 						</div>
 						{errors.petAgeValue && (
-							<p className='text-negative text-xs mt-1'>{errors.petAgeValue.message}</p>
+							<p className='text-negative text-xs mt-1'>
+								{errors.petAgeValue.message}
+							</p>
 						)}
 					</div>
 
@@ -335,7 +344,7 @@ const FoundForm = () => {
 							placeholder='Data odnalezienia'
 							{...register('foundDate', {
 								required: 'Podaj datę odnalezienia',
-								validate: validateDate
+								validate: validateDate,
 							})}
 							error={errors.foundDate}
 							min={getMinDate()}
@@ -441,7 +450,10 @@ const FoundForm = () => {
 							))}
 						</div>
 					)}
-
+					<ReCAPTCHA
+						sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+						ref={recaptchaRef}
+					/>
 					<button
 						type='submit'
 						disabled={loading}
