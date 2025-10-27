@@ -1,5 +1,5 @@
 import FormInput from '../../ui/FormInput';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import dogo from '../../../img/dogo.png';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useUser } from '../../../context/UserContext';
 import { reconnectSocket } from '../../../lib/socket';
+import ReCAPTCHA from 'react-google-recaptcha';
 const Form = () => {
 	const navigate = useNavigate();
 	const { fetchUser } = useUser();
@@ -26,7 +27,7 @@ const Form = () => {
 		hasUpperLower: /[a-z]/.test(password) && /[A-Z]/.test(password),
 		hasSpecialDigit: /[\d]/.test(password) && /[\W_]/.test(password),
 	};
-
+	const recaptchaRef = useRef(null);
 	const submitCall = async (data) => {
 		if (isLoging) {
 			setLoading(true);
@@ -66,11 +67,19 @@ const Form = () => {
 				}
 			}
 		} else {
+			const recaptchaValue = recaptchaRef.current?.getValue();
+
+			if (!recaptchaValue) {
+				toast.error('Proszę potwierdzić, że nie jesteś robotem');
+				return;
+			}
 			try {
 				await axios.post(import.meta.env.VITE_BACKEND_URL + '/auth/register', {
 					email: data.userMail,
 					password: data.userPassword,
+					recaptchaToken: recaptchaValue,
 				});
+				recaptchaRef.current?.reset();
 				reset();
 				setIsLoging(true);
 				toast.success(
@@ -184,6 +193,12 @@ const Form = () => {
 							>
 								Znak specjalny i cyfra
 							</p>
+							<div className='my-4'>
+								<ReCAPTCHA
+									sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+									ref={recaptchaRef}
+								/>
+							</div>
 						</div>
 					)}
 
