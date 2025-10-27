@@ -126,6 +126,26 @@ const FoundForm = () => {
 		return true;
 	};
 
+	const validateAge = (value, unit) => {
+		if (!value) return true;
+
+		const num = Number(value);
+
+		if (!Number.isInteger(num)) {
+			return 'Wiek musi być liczbą całkowitą';
+		}
+
+		if (num < 0) {
+			return 'Wiek nie może być ujemny';
+		}
+
+		if (unit === 'months' && num > 11) {
+			return 'Maksymalnie 11 miesięcy';
+		}
+
+		return true;
+	};
+
 	const onSubmit = async (data) => {
 		const recaptchaValue = recaptchaRef.current?.getValue();
 		if (!recaptchaValue) {
@@ -290,16 +310,8 @@ const FoundForm = () => {
 									type='number'
 									placeholder='Np. 5'
 									{...register('petAgeValue', {
-										min: { value: 0, message: 'Wiek nie może być ujemny' },
-										validate: {
-											maxMonths: (value) => {
-												const unit = watch('petAgeUnit');
-												if (unit === 'months' && value > 11) {
-													return 'Maksymalnie 11 miesięcy';
-												}
-												return true;
-											},
-										},
+										min: { value: 1, message: 'Wiek nie może być ujemny bądź zerowy' },
+										validate: (value) => validateAge(value, watch('petAgeUnit')),
 									})}
 									error={errors.petAgeValue}
 									className='rounded-r-none border-r-0'
