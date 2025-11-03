@@ -225,12 +225,14 @@ const AuthForm = ({ popupMode, onAction }) => {
 							{isLoging ? ' Zarejestruj się' : ' Zaloguj się'}
 						</span>
 					</p>
-					<p className='text-gray'>
-						Zaloguj się jako{' '}
-						<Link to={'/main-page'} className='text-cta cursor-pointer'>
-							gość
-						</Link>
-					</p>
+					{!popupMode && (
+						<p className='text-gray'>
+							Zaloguj się jako{' '}
+							<Link to={'/main-page'} className='text-cta cursor-pointer'>
+								gość
+							</Link>
+						</p>
+					)}
 				</div>
 			</div>
 			{loading && (
