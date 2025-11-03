@@ -8,7 +8,6 @@ import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
 import { useUser } from '../../../context/UserContext';
 import Logo from '../../ui/Logo';
-import { on } from 'events';
 const AuthForm = ({ popupMode, onAction }) => {
 	const navigate = useNavigate();
 	const { fetchUser } = useUser();
