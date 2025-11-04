@@ -17,6 +17,8 @@ const INITIAL_FILTERS = {
 	ageUnit: 'years', // NEW: lata | miesiące
 	sort: 'newest',
 };
+const PAGE_SIZE = 3; // <<< PAGINACJA: ile kart na stronę
+// <<< PAGINACJA: stan
 
 // ---- Wiek: tylko cyfry, min=1; blokada myślnika itp. ----
 function sanitizeAgeInt(v) {
@@ -35,6 +37,12 @@ const LETTERS_REGEX = /^[A-Za-zÀ-ÖØ-öø-ÿĄąĆćĘęŁłŃńÓóŚśŹźŻ
 const isLettersOrEmpty = (s) => !s || LETTERS_REGEX.test(s);
 
 const MainPage = () => {
+	const [pagination, setPagination] = useState({
+		page: 1,
+		pageSize: PAGE_SIZE,
+		total: 0,
+		totalPages: 1,
+	});
 	const { user } = useUser();
 	const { user: loggedInUser } = useAuth();
 	const navigate = useNavigate();
@@ -63,7 +71,7 @@ const MainPage = () => {
 		{ value: 'other', label: 'Inne' },
 	];
 
-	const fetchPetsData = async (type) => {
+	const fetchPetsData = async (type, page = 1) => {
 		setActiveTab(type);
 		setAppliedFilters(null);
 
@@ -71,26 +79,34 @@ const MainPage = () => {
 			const response = await axios.get(
 				`${import.meta.env.VITE_BACKEND_URL}/main-page/fetch-pets`,
 				{
-					params: { type, status: 'active' },
+					params: { type, status: 'active', page, limit: pagination.pageSize },
 				}
 			);
-
-			const items = (response.data.items || []).map((pet) => {
+			console.log('pagination payload', response.data);
+			const payload = response.data || {};
+			const mapped = (payload.items || []).map((pet) => {
 				const map = petSpeciesTypes.find((s) => s.value === pet.pet_species);
 				return map ? { ...pet, pet_species: map.label } : pet;
 			});
 
-			setAllPetsData(items);
-			setPetsData(items);
+			setAllPetsData(mapped);
+			setPetsData(mapped);
+			setPagination({
+				page: payload.page || 1,
+				pageSize: payload.pageSize || PAGE_SIZE,
+				total: payload.total || 0,
+				totalPages: payload.totalPages || 1,
+			});
 		} catch (error) {
 			console.error('Error fetching pets data:', error);
 			setAllPetsData([]);
 			setPetsData([]);
+			setPagination({ page: 1, pageSize: PAGE_SIZE, total: 0, totalPages: 1 });
 		}
 	};
 
 	useEffect(() => {
-		fetchPetsData('lost');
+		fetchPetsData('lost', 1);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
@@ -104,13 +120,14 @@ const MainPage = () => {
 		setSearchParams({ petId: pet.id, type: activeTab });
 	};
 
-	const onApplyFilters = async () => {
+	const onApplyFilters = async (page = 1) => {
 		// --- Walidacja: jeśli rasa zawiera coś innego niż litery/spacje,
 		// to nie wołamy backendu — od razu pokazujemy "Brak wyników..."
 		if (!isLettersOrEmpty(filters.breed)) {
 			setAppliedFilters(null);
 			setAllPetsData([]);
 			setPetsData([]);
+			setPagination({ page: 1, pageSize: PAGE_SIZE, total: 0, totalPages: 1 });
 			return;
 		}
 
@@ -124,7 +141,7 @@ const MainPage = () => {
 		const params = {
 			type: activeTab,
 			status: 'active',
-			species: filters.species || undefined, // wysyłamy kod: dog/cat/...
+			species: filters.species || undefined,
 			breed: filters.breed?.trim() || undefined,
 			cityStreet: filters.location?.trim() || undefined,
 			ageFrom: filters.ageFrom
@@ -135,6 +152,8 @@ const MainPage = () => {
 				: undefined,
 			ageUnit: filters.ageUnit || 'years', // NEW
 			sort: sortMap[filters.sort] || 'newest',
+			page,
+			limit: pagination.pageSize, // <<< PAGINACJA
 		};
 
 		try {
@@ -145,22 +164,46 @@ const MainPage = () => {
 
 			setAppliedFilters(params);
 
-			const items = (data.items || []).map((pet) => {
+			const items = (data?.items || []).map((pet) => {
 				const map = petSpeciesTypes.find((s) => s.value === pet.pet_species);
 				return map ? { ...pet, pet_species: map.label } : pet;
 			});
 
 			setAllPetsData(items);
 			setPetsData(items);
+			setPagination({
+				page: data?.page || 1,
+				pageSize: data?.pageSize || PAGE_SIZE,
+				total: data?.total || 0,
+				totalPages: data?.totalPages || 1,
+			});
 		} catch (e) {
 			console.error('Apply filters error:', e);
+			setAllPetsData([]);
+			setPetsData([]);
+			setPagination({ page: 1, pageSize: PAGE_SIZE, total: 0, totalPages: 1 });
 		}
 	};
 
 	const onResetFilters = async () => {
 		setFilters(INITIAL_FILTERS);
 		setAppliedFilters(null);
-		await fetchPetsData(activeTab);
+		await fetchPetsData(activeTab, 1);
+	};
+
+	const goPrev = () => {
+		if (pagination.page > 1) {
+			const newPage = pagination.page - 1;
+			if (appliedFilters) onApplyFilters(newPage);
+			else fetchPetsData(activeTab, newPage);
+		}
+	};
+	const goNext = () => {
+		if (pagination.page < pagination.totalPages) {
+			const newPage = pagination.page + 1;
+			if (appliedFilters) onApplyFilters(newPage);
+			else fetchPetsData(activeTab, newPage);
+		}
 	};
 
 	// wspólne propsy zabezpieczające dla pól wieku
@@ -186,6 +229,7 @@ const MainPage = () => {
 	};
 	const selectedPetId = searchParams.get('petId');
 	const type = searchParams.get('type');
+
 	return (
 		<div className='relative bg-secondary flex lg:h-screen'>
 			<div className='lg:flex lg:w-4/10 lg:bg-main items-center justify-center overflow-y-hidden hidden'>
@@ -211,7 +255,7 @@ const MainPage = () => {
 						className={`w-1/2 rounded-xl p-2 cursor-pointer transition-colors ${
 							activeTab === 'lost' ? 'bg-cta' : 'bg-gray-300 text-main'
 						}`}
-						onClick={() => fetchPetsData('lost')}
+						onClick={() => fetchPetsData('lost', 1)}
 					>
 						Zaginione
 					</button>
@@ -219,7 +263,7 @@ const MainPage = () => {
 						className={`w-1/2 rounded-xl p-2 cursor-pointer transition-colors ${
 							activeTab === 'found' ? 'bg-cta' : 'bg-gray-300 text-main'
 						}`}
-						onClick={() => fetchPetsData('found')}
+						onClick={() => fetchPetsData('found', 1)}
 					>
 						Znalezione
 					</button>
@@ -364,7 +408,13 @@ const MainPage = () => {
 								className='rounded-xl px-3 py-2 bg-secondary text-text outline-none'
 								placeholder='np. Doberman'
 								value={filters.breed}
-								{...textGuards}
+								pattern='[A-Za-zÀ-ÖØ-öø-ÿĄąĆćĘęŁłŃńÓóŚśŹźŻż\s]*'
+								onPaste={(e) => {
+									const text = (
+										e.clipboardData || window.clipboardData
+									).getData('text');
+									if (!LETTERS_REGEX.test(text)) e.preventDefault();
+								}}
 								onChange={(e) =>
 									setFilters((s) => ({ ...s, breed: e.target.value }))
 								}
@@ -485,7 +535,7 @@ const MainPage = () => {
 						<div className='flex items-center gap-3 md:col-span-2'>
 							<button
 								className='bg-cta rounded-2xl px-4 py-2 cursor-pointer'
-								onClick={onApplyFilters}
+								onClick={() => onApplyFilters(1)}
 							>
 								Filtruj
 							</button>
@@ -511,6 +561,29 @@ const MainPage = () => {
 						))
 					)}
 				</div>
+				{/* PAGINACJA – serwerowa */}
+				{pagination.total > 0 && (
+					<div className='w-full flex items-center justify-center gap-3 py-3'>
+						<button
+							className='bg-secondary rounded-xl px-3 py-2 cursor-pointer disabled:opacity-50'
+							onClick={goPrev}
+							disabled={pagination.page <= 1}
+						>
+							Poprzednia
+						</button>
+						<span className='text-sm text-accent'>
+							Strona {pagination.page} / {pagination.totalPages} • Łącznie{' '}
+							{pagination.total}
+						</span>
+						<button
+							className='bg-secondary rounded-xl px-3 py-2 cursor-pointer disabled:opacity-50'
+							onClick={goNext}
+							disabled={pagination.page >= pagination.totalPages}
+						>
+							Następna
+						</button>
+					</div>
+				)}
 			</div>
 
 			{/* Popup wyboru typu formularza */}
