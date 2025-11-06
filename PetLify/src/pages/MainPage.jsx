@@ -8,6 +8,7 @@ import axios from 'axios';
 import useAuth from '../hooks/useAuth';
 import { useUser } from '../context/UserContext';
 import AuthForm from '../components/features/auth/AuthForm';
+import { GoogleMap, LoadScript, OverlayView } from '@react-google-maps/api';
 const INITIAL_FILTERS = {
 	species: '',
 	breed: '',
@@ -57,7 +58,11 @@ const MainPage = () => {
 	const [isLoginPopupActive, setIsLoginPopupActive] = useState(false);
 	const [petsData, setPetsData] = useState([]);
 	const [allPetsData, setAllPetsData] = useState([]);
-
+	const [selectedPosition, setSelectedPosition] = useState(null);
+	const basePin = {
+		latitude: 52.4057,
+		longitude: 16.9313,
+	};
 	const [filters, setFilters] = useState(INITIAL_FILTERS);
 	const [appliedFilters, setAppliedFilters] = useState(null);
 
@@ -229,11 +234,63 @@ const MainPage = () => {
 	};
 	const selectedPetId = searchParams.get('petId');
 	const type = searchParams.get('type');
-
+	console.log(petsData);
 	return (
 		<div className='relative bg-secondary flex lg:h-screen'>
-			<div className='lg:flex lg:w-4/10 lg:bg-main items-center justify-center overflow-y-hidden hidden'>
-				<h2 className='font-bold text-4xl text-center'>Tutaj będzie mapa!</h2>
+			<div className='lg:flex lg:w-4/10  items-center justify-center overflow-y-hidden hidden'>
+				{!selectedPetId && (
+					<LoadScript
+						googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
+					>
+						<GoogleMap
+							mapContainerStyle={{ width: '100%', height: '100%' }}
+							center={
+								selectedPosition || {
+									lat: basePin.latitude,
+									lng: basePin.longitude,
+								}
+							}
+							zoom={11}
+							options={{
+								mapTypeControl: false,
+								streetViewControl: false,
+								clickableIcons: false,
+							}}
+						>
+							{petsData.map((pet) => {
+								let lat, lng;
+								if (typeof pet.coordinates === 'string') {
+									const coordsStr = pet.coordinates.replace(/[()]/g, '');
+									const [latStr, lngStr] = coordsStr.split(',');
+									lat = parseFloat(latStr);
+									lng = parseFloat(lngStr);
+								} else {
+									lat = pet.coordinates.x;
+									lng = pet.coordinates.y;
+								}
+
+								if (isNaN(lat) || isNaN(lng)) return null;
+
+								return (
+									<OverlayView
+										position={{ lat, lng }}
+										mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+									>
+										<div
+											onClick={() => handlePetInfo(pet)}
+											className='absolute -translate-x-1/2 -translate-y-full rounded-full overflow-hidden border-2 border-cta shadow-md w-[50px] h-[50px] cursor-pointer'
+										>
+											<img
+												src={pet.photo_url[0]}
+												className='w-full h-full object-cover'
+											/>
+										</div>
+									</OverlayView>
+								);
+							})}
+						</GoogleMap>
+					</LoadScript>
+				)}
 			</div>
 
 			<div className='flex flex-col items-center gap-2 py-4 px-6 lg:w-6/10 w-full'>
@@ -563,24 +620,57 @@ const MainPage = () => {
 				</div>
 				{/* PAGINACJA – serwerowa */}
 				{pagination.total > 0 && (
-					<div className='w-full flex items-center justify-center gap-3 py-3'>
+					<div className='w-full flex items-center justify-center gap-2 sm:gap-3 py-3'>
 						<button
-							className='bg-secondary rounded-xl px-3 py-2 cursor-pointer disabled:opacity-50'
+							className='bg-cta rounded-xl px-3 py-2 cursor-pointer disabled:opacity-50 flex items-center gap-1'
 							onClick={goPrev}
 							disabled={pagination.page <= 1}
 						>
-							Poprzednia
+							<svg
+								className='w-4 h-4'
+								fill='none'
+								stroke='currentColor'
+								viewBox='0 0 24 24'
+							>
+								<path
+									strokeLinecap='round'
+									strokeLinejoin='round'
+									strokeWidth={2}
+									d='M15 19l-7-7 7-7'
+								/>
+							</svg>
+							<span className='hidden sm:inline'>Poprzednia</span>
 						</button>
-						<span className='text-sm text-accent'>
-							Strona {pagination.page} / {pagination.totalPages} • Łącznie{' '}
-							{pagination.total}
-						</span>
+
+						<div className='flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-xs sm:text-sm text-accent'>
+							<span className='whitespace-nowrap'>
+								Strona {pagination.page} / {pagination.totalPages}
+							</span>
+							<span className='hidden sm:inline'>•</span>
+							<span className='whitespace-nowrap'>
+								Łącznie {pagination.total}
+							</span>
+						</div>
+
 						<button
-							className='bg-secondary rounded-xl px-3 py-2 cursor-pointer disabled:opacity-50'
+							className='bg-cta rounded-xl px-3 py-2 cursor-pointer disabled:opacity-50 flex items-center gap-1'
 							onClick={goNext}
 							disabled={pagination.page >= pagination.totalPages}
 						>
-							Następna
+							<span className='hidden sm:inline'>Następna</span>
+							<svg
+								className='w-4 h-4'
+								fill='none'
+								stroke='currentColor'
+								viewBox='0 0 24 24'
+							>
+								<path
+									strokeLinecap='round'
+									strokeLinejoin='round'
+									strokeWidth={2}
+									d='M9 5l7 7-7 7'
+								/>
+							</svg>
 						</button>
 					</div>
 				)}

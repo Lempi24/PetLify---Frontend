@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import ImageCarousel from './ImageCarousel';
 import useAuth from '../../hooks/useAuth';
 import ChatModal from '../chat/ChatModal';
-
+import { GoogleMap, LoadScript, OverlayView } from '@react-google-maps/api';
 // NOWY czat – backend (Socket.IO + REST)
 import {
 	ensureThread,
@@ -13,7 +13,7 @@ import { getSocket } from '../../lib/socket';
 
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-
+import PetDetailSkeleton from '../skeletons/PetDetailSkeleton';
 // Proste pole edytowalne używane w trybie "edit"
 const EditableField = ({
 	value,
@@ -175,7 +175,7 @@ const PetInfo = ({
 		}
 	};
 	if (!pet) {
-		return null;
+		return <PetDetailSkeleton />;
 	}
 	return (
 		<div
@@ -183,7 +183,7 @@ const PetInfo = ({
 			onClick={() => setSelectedPetId(null)}
 		>
 			<div
-				className='fixed left-1/2 -translate-x-1/2 h-full w-full lg:w-1/2 bg-main overflow-y-auto p-6'
+				className='fixed left-1/2 -translate-x-1/2 h-full w-full lg:w-1/2 bg-main overflow-y-auto p-6 custom-scroll overflow-x-hidden'
 				onClick={(e) => e.stopPropagation()}
 			>
 				<div className='flex flex-col gap-8'>
@@ -306,7 +306,69 @@ const PetInfo = ({
 						{/* Mapa – placeholder */}
 						<div className='border-b-2 border-accent pb-8'>
 							<div className='w-full h-[200px] flex justify-center items-center bg-secondary rounded-2xl mt-8'>
-								<p>Tutaj będzie mapa... SERIO!</p>
+								<LoadScript
+									googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
+								>
+									<GoogleMap
+										mapContainerStyle={{ width: '100%', height: '100%' }}
+										center={(() => {
+											let lat, lng;
+											if (typeof pet.coordinates === 'string') {
+												const coordsStr = pet.coordinates.replace(/[()]/g, '');
+												const [latStr, lngStr] = coordsStr.split(',');
+												lat = parseFloat(latStr);
+												lng = parseFloat(lngStr);
+											} else {
+												lat = pet.coordinates?.x;
+												lng = pet.coordinates?.y;
+											}
+
+											// Fallback, gdyby coś poszło nie tak
+											if (isNaN(lat) || isNaN(lng)) {
+												return { lat: 52.2297, lng: 21.0122 }; // Warszawa np.
+											}
+
+											return { lat, lng };
+										})()}
+										zoom={13}
+										options={{
+											mapTypeControl: false,
+											streetViewControl: false,
+											clickableIcons: false,
+											disableDefaultUI: true,
+										}}
+									>
+										{(() => {
+											let lat, lng;
+											if (typeof pet.coordinates === 'string') {
+												const coordsStr = pet.coordinates.replace(/[()]/g, '');
+												const [latStr, lngStr] = coordsStr.split(',');
+												lat = parseFloat(latStr);
+												lng = parseFloat(lngStr);
+											} else {
+												lat = pet.coordinates?.x;
+												lng = pet.coordinates?.y;
+											}
+
+											if (isNaN(lat) || isNaN(lng)) return null;
+
+											return (
+												<OverlayView
+													position={{ lat, lng }}
+													mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+												>
+													<div className='absolute -translate-x-1/2 -translate-y-full rounded-full overflow-hidden border-2 border-cta shadow-md w-[50px] h-[50px]'>
+														<img
+															src={pet.photo_url?.[0]}
+															alt={pet.pet_name || 'Zwierzak'}
+															className='w-full h-full object-cover pointer-events-none'
+														/>
+													</div>
+												</OverlayView>
+											);
+										})()}
+									</GoogleMap>
+								</LoadScript>
 							</div>
 						</div>
 
