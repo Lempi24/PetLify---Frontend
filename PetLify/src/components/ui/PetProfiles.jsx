@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
+import ImageCarousel from '../ui/ImageCarousel.jsx';
 
 const petSpeciesTypes = [
     { label: 'Pies', value: 'dog' },
@@ -27,6 +29,20 @@ const getSizeLabel = (value) => {
     return size ? size.label : 'Nieznany rozmiar';
 };
 
+const parsePetAge = (ageString) => {
+    if (!ageString) return 'Brak informacji';
+
+    const ageMatch = ageString.match(/(\d+)\s*(miesięcy|lat|months|years)/i);
+    if (!ageMatch) return 'Brak informacji';
+
+    const ageValue = ageMatch[1];
+    const ageUnit = ageMatch[2].toLowerCase().includes('lat') || ageMatch[2].toLowerCase().includes('year') 
+        ? 'lat' 
+        : 'miesięcy';
+
+    return `${ageValue} ${ageUnit}`;
+};
+
 const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
     const [formData, setFormData] = useState({
         petName: '',
@@ -48,15 +64,12 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
             
             let ageValue = '';
             let ageUnit = 'months';
-            
-            if (editPet.pet_age) {
-                const ageMatch = editPet.pet_age.match(/(\d+)\s*(miesięcy|lat|months|years)/i);
-                if (ageMatch) {
-                    ageValue = ageMatch[1];
-                    ageUnit = ageMatch[2].toLowerCase().includes('lat') || ageMatch[2].toLowerCase().includes('year') ? 'years' : 'months';
-                }
+
+            const parsedAge = parsePetAge(editPet.pet_age);
+            if (parsedAge) {
+                [ageValue, ageUnit] = parsedAge.split(' ');
             }
-            
+
             setFormData({
                 petName: editPet.pet_name || '',
                 petAgeValue: ageValue,
@@ -178,7 +191,7 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
                 submitData.append('petId', editPet.id);
                 
                 await axios.put(
-                    `${import.meta.env.VITE_BACKEND_URL}/settings/updatePetProfile`,
+                    `${import.meta.env.VITE_BACKEND_URL}/pet-profiles/updatePetProfile`,
                     submitData,
                     {
                         headers: {
@@ -191,7 +204,7 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
                 toast.success('Profil zwierzęcia został zaktualizowany');
             } else {
                 await axios.post(
-                    `${import.meta.env.VITE_BACKEND_URL}/settings/createPetProfile`,
+                    `${import.meta.env.VITE_BACKEND_URL}/pet-profiles/createPetProfile`,
                     submitData,
                     {
                         headers: {
@@ -292,8 +305,8 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
                             ))}
                             
                             {photos.length + existingPhotos.length < 5 && (
-                                <label className="w-20 h-20 border-2 border-dashed border-cta rounded-lg flex items-center justify-center cursor-pointer hover:bg-cta hover:bg-opacity-10 transition-colors group">
-                                    <span className="text-cta text-2xl group-hover:scale-110 transition-transform">+</span>
+                                <label className="w-20 h-20 border-2 border-dashed border-cta rounded-lg flex items-center justify-center cursor-pointer transition-colors group">
+                                    <span className="text-cta text-2xl group-hover:scale-180 transition-transform duration-300 ease-in-out">+</span>
                                     <input
                                         type="file"
                                         multiple
@@ -319,7 +332,7 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
                                 className={`w-full px-3 py-3 rounded-md bg-secondary border-2 text-text placeholder:text-gray ${
                                     errors.petName ? 'border-negative' : 'border-cta'
                                 }`}
-                                placeholder="Wprowadź imię zwierzaka"
+                                placeholder="Np. Burek"
                             />
                             {errors.petName && (
                                 <p className="text-negative text-sm mt-1">{errors.petName}</p>
@@ -422,7 +435,7 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
                                 className={`w-full px-3 py-3 rounded-md bg-secondary border-2 text-text placeholder:text-gray ${
                                     errors.petColor ? 'border-negative' : 'border-cta'
                                 }`}
-                                placeholder="Wprowadź kolor"
+                                placeholder="Np.Czarny"
                             />
                             {errors.petColor && (
                                 <p className="text-negative text-sm mt-1">{errors.petColor}</p>
@@ -461,6 +474,7 @@ const PetProfiles = () => {
     const [showCreatePetProfile, setShowCreatePetProfile] = useState(false);
     const [petToDelete, setPetToDelete] = useState(null);
     const [petToEdit, setPetToEdit] = useState(null);
+    const [selectedPet, setSelectedPet] = useState(null);
 
     const fetchPetProfiles = async () => {
         try {
@@ -470,7 +484,7 @@ const PetProfiles = () => {
             }
 
             const response = await axios.get(
-                `${import.meta.env.VITE_BACKEND_URL}/settings/fetchPetProfiles`,
+                `${import.meta.env.VITE_BACKEND_URL}/pet-profiles/fetchPetProfiles`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -496,7 +510,7 @@ const PetProfiles = () => {
         try {
             const token = localStorage.getItem('token');
             await axios.delete(
-                `${import.meta.env.VITE_BACKEND_URL}/settings/deletePetProfile`,
+                `${import.meta.env.VITE_BACKEND_URL}/pet-profiles/deletePetProfile`,
                 {
                     headers: { 
                         Authorization: `Bearer ${token}` 
@@ -534,6 +548,8 @@ const PetProfiles = () => {
     }, []);
 
     const renderPetProfiles = () => {
+        const navigate = useNavigate();
+
         if (loading) {
             return <p className="text-accent">Ładowanie profili...</p>;
         }
@@ -543,23 +559,55 @@ const PetProfiles = () => {
                 {petProfiles.map((pet) => (
                     <div
                         key={pet.id}
-                        className="bg-main flex items-center rounded-xl w-full py-3 px-3 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] hover:bg-main-dark transition-colors border border-secondary"
+                        onClick={() => setSelectedPet(pet)}
+                        className="bg-main flex items-center rounded-xl w-full py-3 px-3 
+                                shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] 
+                                hover:bg-main-dark transition-colors border border-secondary 
+                                max-w-screen-lg cursor-pointer"
                     >
-                        {pet.photo_url && pet.photo_url.length > 0 && (
-                            <img
-                                src={pet.photo_url[0]}
-                                alt={pet.pet_name}
-                                className="w-12 h-12 rounded-full object-cover mr-3 border-2 border-cta"
-                            />
-                        )}
-                        <div className="flex-1">
-                            <h3 className="font-semibold text-text">{pet.pet_name}</h3>
-                            <p className="text-sm text-accent">
-                                {getSpeciesLabel(pet.pet_species_type || pet.pet_species)} • {getSizeLabel(pet.pet_size)} • {pet.pet_age || 'Nieznany wiek'}
-                            </p>
+                        <div className="flex items-center flex-1">
+                            {pet.photo_url && pet.photo_url.length > 0 && (
+                                <img
+                                    src={pet.photo_url[0]}
+                                    alt={pet.pet_name}
+                                    className="w-18 h-18 rounded-full object-cover mr-3 border-2 border-cta"
+                                />
+                            )}
+                            <div className="flex flex-col justify-between flex-1 gap-1">
+                                <h3 className="font-semibold text-text text-xl">{pet.pet_name}</h3>
+                                <div className="text-base text-accent inline-block">
+                                    <span className="border-t border-gray-300 w-[81%] block mb-1"></span>
+                                    <p className="text-base max-w-md">
+                                        {
+                                            [
+                                                getSpeciesLabel(pet.pet_species_type || pet.pet_species),
+                                                getSizeLabel(pet.pet_size),
+                                                pet.pet_color,
+                                            ]
+                                            .filter(Boolean)
+                                            .join(' • ')
+                                        }
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                         
                         <div className="flex items-center gap-2 ml-4">
+                            {!pet.is_lost ? (
+                                <button
+                                    className="bg-cta text-white py-2 px-4 rounded-lg cursor-pointer hover:bg-cta-dark transition-colors text-sm"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate('/main-page/create-lost-form', { 
+                                            state: { pet, photos: pet.photo_url || [] } 
+                                        });
+                                    }}
+                                >
+                                    Zgłoś
+                                </button>
+                            ) : (
+                                <p className="bg-cta text-white py-2 px-4 rounded-lg text-sm">Zaginiony</p>
+                            )}
                             <button
                                 className="bg-cta text-white py-2 px-4 rounded-lg cursor-pointer hover:bg-cta-dark transition-colors text-sm"
                                 onClick={(e) => {
@@ -581,25 +629,93 @@ const PetProfiles = () => {
                         </div>
                     </div>
                 ))}
-                
-                {petProfiles.length <= 2 && (
+
+                {petProfiles.length <= 7 && (
                     <button
-                        className="bg-transparent border-2 border-dashed border-cta flex items-center justify-center rounded-xl w-full py-4 px-3 cursor-pointer transition-colors group"
+                        className="bg-transparent border-2 border-dashed border-cta flex items-center justify-center 
+                                rounded-xl w-full py-4 px-3 cursor-pointer transition-colors group max-w-screen-lg"
                         onClick={() => setShowCreatePetProfile(true)}
                     >
                         <div className="flex items-center justify-center">
-                            <span className="text-cta text-2xl font-bold mr-2 transition-transform">+</span>
-                            <span className="text-cta font-semibold">Dodaj nowy profil zwierzęcia</span>
+                            <span className="text-cta font-semibold transition-transform duration-300 ease-in-out group-hover:scale-110">
+                                + Dodaj nowy profil zwierzęcia
+                            </span>
                         </div>
                     </button>
+                )}
+
+                {selectedPet && (
+                    <div
+                        className="fixed inset-0 bg-black/40 backdrop-blur-2xl flex items-center justify-center z-[10000]"
+                        onClick={() => setSelectedPet(null)}
+                    >
+                        <div
+                            className="bg-main rounded-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto overflow-x-hidden p-6"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-2xl font-bold text-text">
+                                    Profil twojego zwierzaka
+                                </h2>
+                                <button
+                                    onClick={() => setSelectedPet(null)}
+                                    className="text-cta cursor-pointer text-2xl hover:opacity-80 transition-opacity"
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            <div className="flex flex-col items-center text-center">
+                                {selectedPet.photo_url && selectedPet.photo_url.length > 0 && (
+                                    <ImageCarousel images={selectedPet.photo_url} style={{ width: '100%', maxWidth: '100%' }} />
+                                )}
+
+                                <h3 className="text-2xl font-bold text-text mb-2">
+                                    {selectedPet.pet_name}
+                                </h3>
+                                <p className="text-accent mb-4">
+                                    {[
+                                        getSpeciesLabel(selectedPet.pet_species_type || selectedPet.pet_species),
+                                        selectedPet.pet_breed,
+                                        getSizeLabel(selectedPet.pet_size),
+                                        selectedPet.pet_color,
+                                        parsePetAge(selectedPet.pet_age),
+                                    ]
+                                    .filter(Boolean)
+                                    .join(' • ')}
+                                </p>
+                            </div>
+
+                            <div className="flex justify-center gap-3 mt-6">
+                                <button
+                                    className="bg-cta text-white py-2 px-6 rounded-lg hover:bg-cta-dark transition-colors text-sm cursor-pointer"
+                                    onClick={() => {
+                                        setSelectedPet(null);
+                                        handleEditPetProfile(selectedPet);
+                                    }}
+                                >
+                                    Edytuj
+                                </button>
+                                <button
+                                    className="bg-negative text-white py-2 px-6 rounded-lg hover:bg-negative-dark transition-colors text-sm cursor-pointer"
+                                    onClick={() => {
+                                        setSelectedPet(null);
+                                        confirmDelete(selectedPet);
+                                    }}
+                                >
+                                    Usuń
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         );
     };
 
+
     return (
         <div className="space-y-3">
-            <p className="text-cta font-semibold">Profil zwierzaka</p>
             {renderPetProfiles()}
             
             {showCreatePetProfile && (

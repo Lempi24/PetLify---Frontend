@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import useAuth from '../../hooks/useAuth';
 import { useUser } from '../../context/UserContext';
 const SubPagesNav = ({ currentPath, isBurgerOpen }) => {
 	const { user } = useUser();
@@ -36,6 +35,14 @@ const SubPagesNav = ({ currentPath, isBurgerOpen }) => {
 				</div>
 			</div>
 			<div className='flex flex-col gap-3'>
+				<Link
+					to='/pet-profiles'
+					className={`p-4 w-9/10 border-b-2 border-cta ${
+						currentPath === '/pet-profiles' ? 'bg-cta text-main' : ''
+					}`}
+				>
+					Moje zwierzęta
+				</Link>
 				<Link
 					to='/chats'
 					className={`p-4 w-9/10 border-b-2 border-cta ${

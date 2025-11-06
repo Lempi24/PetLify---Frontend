@@ -1,15 +1,47 @@
 import FormInput from '../../../ui/FormInput';
 import { useForm } from 'react-hook-form';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import { GoogleMap, LoadScript, Marker, Circle } from '@react-google-maps/api';
 import ReCAPTCHA from 'react-google-recaptcha';
+
 const LostForm = () => {
 	const MAX_PHOTOS = 5;
 	const navigate = useNavigate();
+	const location = useLocation();
 	const recaptchaRef = useRef(null);
+	const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
+	const [userPetProfiles, setUserPetProfiles] = useState([]);
+	const [loadingProfiles, setLoadingProfiles] = useState(true);
+
+	useEffect(() => {
+		const fetchProfiles = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                const response = await axios.get(
+                    `${import.meta.env.VITE_BACKEND_URL}/pet-profiles/fetchPetProfiles`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+
+                setUserPetProfiles(response.data || []);
+            } catch (error) {
+                console.error('Błąd pobierania profili zwierząt:', error);
+                setUserPetProfiles([]);
+                toast.error('Nie udało się pobrać profili zwierząt');
+            } finally {
+                setLoadingProfiles(false);
+            }
+        };
+
+        fetchProfiles();
+	}, []);
+
+	const userHasPetProfiles = !loadingProfiles && userPetProfiles.length > 0;
+
 	const {
 		register,
 		handleSubmit,
@@ -18,6 +50,69 @@ const LostForm = () => {
 		watch,
 		setValue,
 	} = useForm({ mode: 'onChange' });
+
+	useEffect(() => {
+		const fetchPetData = async () => {
+			const petData = location.state?.pet;
+
+			if (petData) {
+				setValue('petName', petData.pet_name);
+				setValue('petSize', petData.pet_size);
+				setValue('petBreed', petData.pet_breed);
+				setValue('petColor', petData.pet_color);
+
+				if (petData.pet_age) {
+					const match = petData.pet_age.match(/(\d+)\s*(miesięcy|lat|months|years)/i);
+
+					if (match) {
+						setValue('petAgeValue', match[1]);
+						setValue(
+							'petAgeUnit',
+							match[2].toLowerCase().includes('mies') || match[2].toLowerCase().includes('month')
+							? 'months'
+							: 'years'
+						);
+					}
+				} else {
+					setValue('petAgeValue', petData.pet_age_value || '');
+					setValue('petAgeUnit', petData.pet_age_unit || 'years');
+				}
+
+				if (petData.photo_url && petData.photo_url.length > 0) {
+					try {
+						const photoFiles = await Promise.all(
+							petData.photo_url.slice(0, MAX_PHOTOS).map(async (url, index) => {
+								const response = await fetch(url);
+								const blob = await response.blob();
+
+								const fileName = url.split('/').pop() || `pet_photo_${index + 1}.jpg`;
+								return new File([blob], fileName, { type: blob.type });
+							})
+						);
+
+						const dataTransfer = new DataTransfer();
+						photoFiles.forEach(file => dataTransfer.items.add(file));
+
+						setValue('photos', dataTransfer.files, { shouldValidate: true });
+
+						const previewUrls = photoFiles.map(file => URL.createObjectURL(file));
+						setPreviews(previewUrls);
+					} catch (error) {
+						console.error('Błąd podczas ładowania zdjęć z profilu:', error);
+						toast.error('Nie udało się załadować zdjęć z profilu');
+					}
+				}
+
+				setValue(
+					'petSpecies',
+					petData.pet_species_type || petData.pet_species || petData.species || ''
+				);
+			}
+		};
+
+	fetchPetData();
+	}, [location.state?.pet]);
+
 
 	const petSpeciesTypes = [
 		{ label: 'Pies', value: 'dog' },
@@ -34,6 +129,16 @@ const LostForm = () => {
 		{ label: 'Duży', value: 'large' },
 	];
 
+	const getSpeciesLabel = (value) => {
+		const species = petSpeciesTypes.find(s => s.value === value);
+		return species ? species.label : 'Nieznany gatunek';
+	};
+
+	const getSizeLabel = (value) => {
+		const size = petSizeTypes.find(s => s.value === value);
+		return size ? size.label : 'Nieznany rozmiar';
+	};
+
 	const basePin = {
 		latitude: 52.4057,
 		longitude: 16.9313,
@@ -46,9 +151,11 @@ const LostForm = () => {
 	const photoFiles = watch('photos');
 
 	useEffect(() => {
+		
 		if (photoFiles && photoFiles.length > 0) {
-			const objectUrls = Array.from(photoFiles).map((file) =>
-				URL.createObjectURL(file)
+			const objectUrls = Array.from(photoFiles)
+			.map(
+				(file) => URL.createObjectURL(file)
 			);
 			setPreviews(objectUrls);
 
@@ -154,7 +261,7 @@ const LostForm = () => {
 			toast.success('Zgłoszenie zostało wysłane');
 			recaptchaRef.current?.reset();
 			reset();
-			navigate('/main-page');
+			navigate(-1);
 		} catch (error) {
 			toast.error('Wystąpił błąd przy wysyłaniu formularza');
 			recaptchaRef.current?.reset();
@@ -199,11 +306,14 @@ const LostForm = () => {
 	};
 
 	return (
-		<div className='flex justify-center items-start p-4 min-h-screen lg:w-1/2'>
-			<div className='w-full max-w-xl space-y-4'>
+		<div className='flex justify-center items-start p-4 min-h-screen w-full bg-main'>
+			<div className='w-full max-w-xl space-y-4 bg-main rounded-lg shadow-lg p-6'>
 				<div className='relative flex justify-center items-center mb-4 p-2g'>
 					<div className='absolute left-0'>
-						<Link to='/main-page'>
+						<button
+							onClick={() => navigate(-1)}
+							className='w-6 h-6 cursor-pointer'
+							>
 							<svg
 								xmlns='http://www.w3.org/2000/svg'
 								viewBox='0 0 640 640'
@@ -211,12 +321,130 @@ const LostForm = () => {
 							>
 								<path d='M73.4 297.4C60.9 309.9 60.9 330.2 73.4 342.7L233.4 502.7C245.9 515.2 266.2 515.2 278.7 502.7C291.2 490.2 291.2 469.9 278.7 457.4L173.3 352L544 352C561.7 352 576 337.7 576 320C576 302.3 561.7 288 544 288L173.3 288L278.7 182.6C291.2 170.1 291.2 149.8 278.7 137.3C266.2 124.8 245.9 124.8 233.4 137.3L73.4 297.3z' />
 							</svg>
-						</Link>
+						</button>
 					</div>
 					<h2 className='text-xl font-semibold text-center'>
 						Zgłoś zaginięcie
 					</h2>
 				</div>
+
+				{userHasPetProfiles && (
+					<div className="flex justify-center mt-4 w-full">
+						<button
+							className="bg-secondary border border-cta text-cta py-2 px-4 rounded-md transition duration-300 hover:bg-opacity-90 cursor-pointer"
+							onClick={() => setIsProfilePopupOpen(true)}
+
+						>
+							Uzupełnij z profilu zwierzęcia
+						</button>
+					</div>
+				)}
+
+				{isProfilePopupOpen && (
+					<div
+						className="fixed backdrop-blur-2xl h-screen w-screen z-10000 top-0 left-0 flex items-center justify-center"
+						onClick={() => setIsProfilePopupOpen(false)}
+					>
+						<div
+						className="bg-secondary rounded-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto p-6 relative"
+						onClick={(e) => e.stopPropagation()}
+						>
+						<button
+							onClick={() => setIsProfilePopupOpen(false)}
+							className="absolute top-3 right-3 text-cta cursor-pointer text-2xl hover:opacity-80 transition-opacity"
+						>
+							×
+						</button>
+
+						<h3 className="text-xl font-semibold mb-4 text-center">
+							Wybierz profil zwierzęcia
+						</h3>
+
+						<div className="space-y-3">
+							{userPetProfiles.map((pet) => (
+							<div
+								key={pet.id}
+								className="bg-main flex items-center rounded-xl w-full py-3 px-3 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] transition-colors border border-secondary cursor-pointer"
+								onClick={async() => {
+									console.log('Wybrano profil zwierzęcia:', pet);
+									setValue('petName', pet.pet_name);
+									setValue('petSpecies', pet.pet_species_type);
+									setValue('petSize', pet.pet_size);
+									setValue('petColor', pet.pet_color);
+									setValue('petBreed', pet.pet_breed);
+
+									if (pet.pet_age && typeof pet.pet_age === 'string') {
+										const match = pet.pet_age.match(/(\d+)\s*(miesięcy|lat|months|years)/i);
+										if (match) {
+										setValue('petAgeValue', match[1]);
+										setValue(
+											'petAgeUnit',
+											match[2].toLowerCase().includes('mies') || match[2].toLowerCase().includes('month')
+											? 'months'
+											: 'years'
+										);
+										}
+									}
+
+									if (pet.photo_url && pet.photo_url.length > 0) {
+										try {
+											const photoFiles = await Promise.all(
+												pet.photo_url.slice(0, MAX_PHOTOS).map(async (url, index) => {
+												const response = await fetch(url);
+												const blob = await response.blob();
+												
+												const fileName = url.split('/').pop() || `pet_photo_${index + 1}.jpg`;
+												
+												return new File([blob], fileName, { type: blob.type });
+												})
+											);
+
+											const dataTransfer = new DataTransfer();
+											photoFiles.forEach(file => dataTransfer.items.add(file));
+											
+											setValue('photos', dataTransfer.files, { shouldValidate: true });
+											
+											const previewUrls = photoFiles.map(file => URL.createObjectURL(file));
+											setPreviews(previewUrls);
+
+										} catch (error) {
+											console.error('Błąd podczas ładowania zdjęć z profilu:', error);
+											toast.error('Nie udało się załadować zdjęć z profilu');
+										}
+									}
+
+									setIsProfilePopupOpen(false);
+								}}
+							>
+								{pet.photo_url?.[0] && (
+									<img
+										src={pet.photo_url[0]}
+										alt={pet.pet_name}
+										className="w-18 h-18 rounded-full object-cover mr-3 border-2 border-cta"
+									/>
+								)}
+								<div className="flex flex-col justify-between flex-1 gap-1">
+								<h3 className="font-semibold text-text text-xl">{pet.pet_name}</h3>
+								<div className="text-base text-accent inline-block">
+									<span className="border-t border-gray-300 w-[81%] block mb-1"></span>
+									<p className="text-base max-w-md">
+									{[
+										getSpeciesLabel(pet.pet_species_type || pet.pet_species),
+										getSizeLabel(pet.pet_size),
+										pet.pet_color,
+									]
+										.filter(Boolean)
+										.join(' • ')}
+									</p>
+								</div>
+								</div>
+							</div>
+							))}
+						</div>
+						</div>
+					</div>
+				)}
+
 
 				<form
 					onSubmit={handleSubmit(onSubmit)}
