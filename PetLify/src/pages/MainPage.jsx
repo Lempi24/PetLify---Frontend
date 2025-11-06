@@ -255,6 +255,87 @@ const MainPage = () => {
 								mapTypeControl: false,
 								streetViewControl: false,
 								clickableIcons: false,
+								styles: [
+									{
+										elementType: 'geometry',
+										stylers: [{ color: '#1e201e' }],
+									},
+
+									{
+										elementType: 'labels.text.fill',
+										stylers: [{ color: '#b7bdca' }],
+									},
+									{
+										elementType: 'labels.text.stroke',
+										stylers: [{ color: '#1e201e' }],
+									},
+
+									{
+										featureType: 'road',
+										elementType: 'geometry',
+										stylers: [{ color: '#3c3d37' }],
+									},
+									{
+										featureType: 'road',
+										elementType: 'geometry.stroke',
+										stylers: [{ color: '#272a27' }],
+									},
+									{
+										featureType: 'road',
+										elementType: 'labels.text.fill',
+										stylers: [{ color: '#b7bdca' }],
+									},
+
+									{
+										featureType: 'water',
+										elementType: 'geometry',
+										stylers: [{ color: '#272a27' }],
+									},
+									{
+										featureType: 'water',
+										elementType: 'labels.text.fill',
+										stylers: [{ color: '#767b86' }],
+									},
+
+									{
+										featureType: 'landscape',
+										elementType: 'geometry',
+										stylers: [{ color: '#242624' }],
+									},
+									{
+										featureType: 'poi.park',
+										elementType: 'geometry',
+										stylers: [{ color: '#272a27' }],
+									},
+
+									{
+										featureType: 'poi',
+										elementType: 'all',
+										stylers: [{ visibility: 'off' }],
+									},
+
+									{
+										featureType: 'administrative',
+										elementType: 'geometry',
+										stylers: [{ color: '#3c3d37' }],
+									},
+									{
+										featureType: 'administrative.country',
+										elementType: 'labels.text.fill',
+										stylers: [{ color: '#b7bdca' }],
+									},
+
+									{
+										featureType: 'road.highway',
+										elementType: 'geometry',
+										stylers: [{ color: '#ce7f31' }],
+									},
+									{
+										featureType: 'road.highway',
+										elementType: 'geometry.stroke',
+										stylers: [{ color: '#b56e2c' }],
+									},
+								],
 							}}
 						>
 							{petsData.map((pet) => {
