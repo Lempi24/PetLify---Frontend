@@ -1,5 +1,5 @@
 import FormInput from '../../../ui/FormInput';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -15,6 +15,7 @@ const LostForm = () => {
 	const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
 	const [userPetProfiles, setUserPetProfiles] = useState([]);
 	const [loadingProfiles, setLoadingProfiles] = useState(true);
+	const [selectedPetProfile, setSelectedPetProfile] = useState(null);
 
 	useEffect(() => {
 		const fetchProfiles = async () => {
@@ -27,7 +28,12 @@ const LostForm = () => {
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
 
-                setUserPetProfiles(response.data || []);
+				console.log('Pobrane profile zwierząt:', response.data);
+
+				const notLostProfiles = (response.data || []).filter(profile => !profile.is_lost);
+
+				console.log('Pobrane profile zwierząt (niezaginione):', notLostProfiles);
+                setUserPetProfiles(notLostProfiles);
             } catch (error) {
                 console.error('Błąd pobierania profili zwierząt:', error);
                 setUserPetProfiles([]);
@@ -46,6 +52,7 @@ const LostForm = () => {
 		register,
 		handleSubmit,
 		formState: { errors },
+		control,
 		reset,
 		watch,
 		setValue,
@@ -217,11 +224,13 @@ const LostForm = () => {
 	};
 
 	const onSubmit = async (data) => {
+		const petDataFromProfile = location.state?.pet || selectedPetProfile;
 		const recaptchaValue = recaptchaRef.current?.getValue();
 		if (!recaptchaValue) {
 			toast.error('Proszę potwierdzić, że nie jesteś robotem.');
 			return;
 		}
+		
 		console.log('onSubmit został wywołany!');
 		const token = localStorage.getItem('token');
 		console.log('Token:', token);
@@ -236,14 +245,32 @@ const LostForm = () => {
 		try {
 			setLoading(true);
 			const formData = new FormData();
+
+			if (petDataFromProfile?.id) {
+				formData.append('petId', petDataFromProfile.id);
+				console.log('Dodano petId:', petDataFromProfile.id);
+			} else {
+				console.log('Brak petId do dodania');
+			}
+
 			formData.append('recaptchaToken', recaptchaValue);
+			
 			for (const key in data) {
 				if (key === 'photos' && data.photos?.length > 0) {
 					Array.from(data.photos).forEach((file) => {
 						formData.append('photos', file);
 					});
-				} else if (key != 'petAgeValue' && key != 'petAgeUnit') {
+				} else if (key !== 'petAgeValue' && key !== 'petAgeUnit') {
 					formData.append(key, data[key]);
+				}
+			}
+
+			console.log('Zawartość FormData:');
+			for (let [key, value] of formData.entries()) {
+				if (key === 'photos') {
+					console.log('zdjęcie', key, value.name, value.type, value.size);
+				} else {
+					console.log('', key, ':', value);
 				}
 			}
 
@@ -257,15 +284,34 @@ const LostForm = () => {
 				}
 			);
 
-			console.log('Success:', response);
+			console.log('Odpowiedź serwera:', response);
 			toast.success('Zgłoszenie zostało wysłane');
 			recaptchaRef.current?.reset();
 			reset();
 			navigate(-1);
 		} catch (error) {
-			toast.error('Wystąpił błąd przy wysyłaniu formularza');
+			console.error('Error:', error);
+			
+			if (error.response) {
+				console.log('Status:', error.response.status);
+				console.log('Data:', error.response.data);
+				
+				if (error.response.status === 401) {
+					if (error.response.data === 'Limit 3 zgłoszeń osiągnięty') {
+						toast.error('Osiągnięto limit 3 zgłoszeń');
+					} else {
+						toast.error('Błąd autoryzacji. Zaloguj się ponownie.');
+					}
+				} else if (error.response.status === 400) {
+					toast.error(error.response.data?.message || 'Błąd w danych formularza');
+				} else {
+					toast.error('Wystąpił błąd przy wysyłaniu formularza');
+				}
+			} else {
+				toast.error('Problem z połączeniem');
+			}
+			
 			recaptchaRef.current?.reset();
-			console.error(error);
 		} finally {
 			setLoading(false);
 		}
@@ -367,6 +413,8 @@ const LostForm = () => {
 								className="bg-main flex items-center rounded-xl w-full py-3 px-3 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] transition-colors border border-secondary cursor-pointer"
 								onClick={async() => {
 									console.log('Wybrano profil zwierzęcia:', pet);
+									setSelectedPetProfile(pet);
+
 									setValue('petName', pet.pet_name);
 									setValue('petSpecies', pet.pet_species_type);
 									setValue('petSize', pet.pet_size);
@@ -569,109 +617,99 @@ const LostForm = () => {
 					</div>
 
 					<div className='mt-4'>
-						<label className='block text-sm font-medium mb-2'>
-							Zaznacz na mapie lokalizację zaginięcia
-						</label>
-						<LoadScript
-							googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
-						>
+					<label className='block text-sm font-medium mb-2'>
+						Zaznacz na mapie lokalizację zaginięcia
+					</label>
+
+					<Controller
+						name="lostCoordinates"
+						control={control}
+						rules={{ required: 'Musisz zaznaczyć lokalizację na mapie' }}
+						render={({ field }) => (
+						<LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
 							<GoogleMap
-								mapContainerStyle={{ width: '100%', height: '300px' }}
-								center={
-									selectedPosition || {
-										lat: basePin.latitude,
-										lng: basePin.longitude,
-									}
+							mapContainerStyle={{ width: '100%', height: '300px' }}
+							center={selectedPosition || { lat: basePin.latitude, lng: basePin.longitude }}
+							zoom={13}
+							onClick={async (event) => {
+								const lat = event.latLng.lat();
+								const lng = event.latLng.lng();
+
+								setSelectedPosition({ lat, lng });
+
+								field.onChange(`${lng},${lat}`);
+
+								try {
+								const res = await axios.get(
+									`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+								);
+
+								if (res.data.status === 'OK') {
+									const components = res.data.results[0].address_components;
+									let street = '';
+									let city = '';
+
+									components.forEach((c) => {
+									if (c.types.includes('route')) street = c.long_name;
+									if (c.types.includes('locality')) city = c.long_name;
+									});
+
+									setValue('lostStreet', street, { shouldValidate: true });
+									setValue('lostCity', city, { shouldValidate: true });
+									toast.success('Lokalizacja została ustawiona');
+								} else {
+									toast.error('Nie udało się pobrać adresu');
 								}
-								zoom={13}
-								onClick={async (event) => {
-									const lat = event.latLng.lat();
-									const lng = event.latLng.lng();
-
-									setSelectedPosition({ lat, lng });
-
-									try {
-										const res = await axios.get(
-											`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${
-												import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-											}`
-										);
-
-										console.log(res.data.results);
-
-										if (res.data.status === 'OK') {
-											const components = res.data.results[0].address_components;
-
-											let street = '';
-											let city = '';
-
-											components.forEach((c) => {
-												if (c.types.includes('route')) {
-													street = c.long_name;
-												}
-												if (c.types.includes('locality')) {
-													city = c.long_name;
-												}
-											});
-
-											setValue('lostStreet', street, { shouldValidate: true });
-											setValue('lostCity', city, { shouldValidate: true });
-
-											const coordinates = `${lng},${lat}`;
-											setValue('lostCoordinates', coordinates, {
-												shouldValidate: true,
-											});
-
-											toast.success('Lokalizacja została ustawiona');
-										} else {
-											toast.error('Nie udało się pobrać adresu');
-										}
-									} catch (err) {
-										console.error(err);
-										toast.error('Błąd przy pobieraniu adresu');
-									}
-								}}
-								options={{
-									mapTypeControl: false,
-									streetViewControl: false,
-								}}
+								} catch (err) {
+								console.error(err);
+								toast.error('Błąd przy pobieraniu adresu');
+								}
+							}}
+							options={{
+								mapTypeControl: false,
+								streetViewControl: false,
+							}}
 							>
-								{selectedPosition && (
-									<>
-										<Marker
-											position={selectedPosition}
-											icon={{
-												url:
-													'data:image/svg+xml;charset=UTF-8,' +
-													encodeURIComponent(`
-														<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#fe7f00">
-															<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-														</svg>
-													`),
-												scaledSize: new window.google.maps.Size(40, 40),
-											}}
-										/>
-										<Circle
-											center={selectedPosition}
-											radius={250}
-											options={{
-												fillColor: '#fe7f00',
-												fillOpacity: 0.1,
-												strokeColor: '#fe7f00',
-												strokeOpacity: 0.4,
-												strokeWeight: 2,
-												clickable: false,
-												draggable: false,
-												editable: false,
-												visible: true,
-												zIndex: 1,
-											}}
-										/>
-									</>
-								)}
+							{selectedPosition && (
+								<>
+								<Marker
+									position={selectedPosition}
+									icon={{
+									url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+										<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#fe7f00">
+										<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+										</svg>`),
+									scaledSize: new window.google.maps.Size(40, 40),
+									}}
+								/>
+								<Circle
+									center={selectedPosition}
+									radius={250}
+									options={{
+									fillColor: '#fe7f00',
+									fillOpacity: 0.1,
+									strokeColor: '#fe7f00',
+									strokeOpacity: 0.4,
+									strokeWeight: 2,
+									clickable: false,
+									draggable: false,
+									editable: false,
+									visible: true,
+									zIndex: 1,
+									}}
+								/>
+								</>
+							)}
 							</GoogleMap>
 						</LoadScript>
+						)}
+					/>
+
+					{errors.lostCoordinates && (
+						<p className="text-red-500 text-sm mt-1">{errors.lostCoordinates.message}</p>
+					)}
 					</div>
+
 
 					<div>
 						<label className='block text-sm font-medium mb-1'>Opis</label>

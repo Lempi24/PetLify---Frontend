@@ -606,7 +606,7 @@ const PetProfiles = () => {
                                     Zgłoś
                                 </button>
                             ) : (
-                                <p className="bg-cta text-white py-2 px-4 rounded-lg text-sm">Zaginiony</p>
+                                <p className="bg-secondary text-white py-2 px-4 rounded-lg text-sm">Zaginiony</p>
                             )}
                             <button
                                 className="bg-cta text-white py-2 px-4 rounded-lg cursor-pointer hover:bg-cta-dark transition-colors text-sm"
