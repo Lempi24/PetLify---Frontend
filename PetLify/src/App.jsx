@@ -7,6 +7,7 @@ import ChatsPage from './pages/ChatsPage'
 import ReportsPage from './pages/ReportsPage'
 import CreateLostFormPage from './pages/CreateLostFormPage'
 import CreateFoundFormPage from './pages/CreateFoundFormPage'
+import PetProfilesPage from './pages/PetProfilesPage'
 import AdminPanel from './pages/AdminPanel'
 import ManageLostReports from './components/features/auth/admin/ManageLostReports'
 import ManageFoundReports from './components/features/auth/admin/ManageFoundReports'
@@ -31,6 +32,7 @@ function App() {
 					<Route path='/settings' element={<SettingsPage />} />
 					<Route path='/chats' element={<ChatsPage />} />
 					<Route path='/reports' element={<ReportsPage />} />
+					<Route path='/pet-profiles' element={<PetProfilesPage />} />
 					<Route path='/admin-panel' element={<AdminPanel />} />
 					<Route path='/admin-panel/manage-lost-reports' element={<ManageLostReports />} />
 					<Route path='/admin-panel/manage-found-reports' element={<ManageFoundReports />} />

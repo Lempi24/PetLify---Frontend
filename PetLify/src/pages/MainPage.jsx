@@ -460,6 +460,12 @@ const MainPage = () => {
 
 									<div className='flex flex-col items-center gap-3'>
 										<Link
+											to='/pet-profiles'
+											className='bg-cta w-9/10 rounded-2xl p-2 font-bold cursor-pointer text-center'
+										>
+											Moje zwierzęta
+										</Link>
+										<Link
 											to='/chats'
 											className='bg-cta w-9/10 rounded-2xl p-2 font-bold cursor-pointer text-center'
 										>

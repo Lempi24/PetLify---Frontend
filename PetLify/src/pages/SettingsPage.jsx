@@ -5,7 +5,6 @@ import SettingsButtonContainer from '../components/ui/SettingsButtonContainer';
 import BurgerMenu from '../components/ui/BurgerMenu';
 import { useUser } from '../context/UserContext';
 import SettingsPanel from '../components/ui/SettingsPanel';
-import PetProfiles from '../components/ui/PetProfiles';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 
@@ -153,8 +152,6 @@ const SettingsPage = () => {
 						handleBurger={() => setIsBurgerOpen((prev) => !prev)}
 					/>
 				</div>
-				
-				<PetProfiles />
 
 				<div>
 					<p className='text-cta'>Konto</p>
