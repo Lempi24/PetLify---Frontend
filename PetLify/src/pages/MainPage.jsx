@@ -255,6 +255,13 @@ const MainPage = () => {
 								mapTypeControl: false,
 								streetViewControl: false,
 								clickableIcons: false,
+								styles: [
+									{
+										featureType: 'poi',
+										elementType: 'all',
+										stylers: [{ visibility: 'off' }],
+									},
+								],
 							}}
 						>
 							{petsData.map((pet) => {
