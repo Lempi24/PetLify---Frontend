@@ -9,17 +9,20 @@ import useAuth from '../hooks/useAuth';
 import { useUser } from '../context/UserContext';
 import AuthForm from '../components/features/auth/AuthForm';
 import { GoogleMap, LoadScript, OverlayView } from '@react-google-maps/api';
+
 const INITIAL_FILTERS = {
 	species: '',
 	breed: '',
-	location: '',
+	// ROZDZIELONE MIASTO / ULICA
+	city: '',
+	street: '',
 	ageFrom: '',
 	ageTo: '',
 	ageUnit: 'years', // NEW: lata | miesiące
 	sort: 'newest',
 };
+
 const PAGE_SIZE = 3; // <<< PAGINACJA: ile kart na stronę
-// <<< PAGINACJA: stan
 
 // ---- Wiek: tylko cyfry, min=1; blokada myślnika itp. ----
 function sanitizeAgeInt(v) {
@@ -32,6 +35,23 @@ function sanitizeAgeInt(v) {
 }
 
 const BLOCKED_KEYS = new Set(['-', '+', 'e', 'E', '.', ',', ' ']);
+
+// dopuszczalne znaki w polach wieku (cyfry, przecinek, kropka, spacja)
+const AGE_ALLOWED_CHARS = new Set([
+	'0',
+	'1',
+	'2',
+	'3',
+	'4',
+	'5',
+	'6',
+	'7',
+	'8',
+	'9',
+	',',
+	'.',
+	' ',
+]);
 
 // ---- Gatunek/Rasa: tylko litery (w tym PL) i spacje ----
 const LETTERS_REGEX = /^[A-Za-zÀ-ÖØ-öø-ÿĄąĆćĘęŁłŃńÓóŚśŹźŻż\s]+$/;
@@ -65,6 +85,7 @@ const MainPage = () => {
 	};
 	const [filters, setFilters] = useState(INITIAL_FILTERS);
 	const [appliedFilters, setAppliedFilters] = useState(null);
+	const [ageError, setAgeError] = useState('');
 
 	const petSpeciesTypes = [
 		{ value: '', label: '-- Wybierz --' },
@@ -125,16 +146,40 @@ const MainPage = () => {
 		setSearchParams({ petId: pet.id, type: activeTab });
 	};
 
-	const onApplyFilters = async (page = 1) => {
+	const onApplyFilters = async (page = 1, filtersOverride = null) => {
+		// bierzemy filtry albo z argumentu, albo ze stanu
+		const currentFilters = filtersOverride || filters;
+
 		// --- Walidacja: jeśli rasa zawiera coś innego niż litery/spacje,
 		// to nie wołamy backendu — od razu pokazujemy "Brak wyników..."
-		if (!isLettersOrEmpty(filters.breed)) {
+		if (!isLettersOrEmpty(currentFilters.breed)) {
 			setAppliedFilters(null);
 			setAllPetsData([]);
 			setPetsData([]);
-			setPagination({ page: 1, pageSize: PAGE_SIZE, total: 0, totalPages: 1 });
+			setPagination({
+				page: 1,
+				pageSize: PAGE_SIZE,
+				total: 0,
+				totalPages: 1,
+			});
+			setFiltersOpen(false);
 			return;
 		}
+
+		// --- Walidacja wieku: musi być liczbą całkowitą, jeśli jest wpisany ---
+		const isIntOrEmpty = (v) =>
+			v === '' ||
+			v === null ||
+			typeof v === 'undefined' ||
+			/^\d+$/.test(String(v).trim());
+
+		if (!isIntOrEmpty(currentFilters.ageFrom) || !isIntOrEmpty(currentFilters.ageTo)) {
+			setAgeError('Wiek musi być liczbą całkowitą');
+			return; // przerywamy – nie filtrujemy
+		}
+
+		// jeśli ok, kasujemy ew. poprzedni błąd
+		setAgeError('');
 
 		const sortMap = {
 			newest: 'newest',
@@ -143,22 +188,32 @@ const MainPage = () => {
 			ageDesc: 'age_desc',
 		};
 
+		// ZŁĄCZONE MIASTO + ULICA DO JEDNEGO PARAMETRU
+		const cityStreet =
+			[currentFilters.city, currentFilters.street]
+				.filter(Boolean)
+				.join(', ')
+				.trim() || undefined;
+
+		const parseAge = (v) => {
+			if (!v) return undefined;
+			const n = parseInt(String(v).trim(), 10);
+			if (!Number.isFinite(n)) return undefined;
+			return Math.max(1, n);
+		};
+
 		const params = {
 			type: activeTab,
 			status: 'active',
-			species: filters.species || undefined,
-			breed: filters.breed?.trim() || undefined,
-			cityStreet: filters.location?.trim() || undefined,
-			ageFrom: filters.ageFrom
-				? Math.max(1, parseInt(filters.ageFrom, 10) || 1)
-				: undefined,
-			ageTo: filters.ageTo
-				? Math.max(1, parseInt(filters.ageTo, 10) || 1)
-				: undefined,
-			ageUnit: filters.ageUnit || 'years', // NEW
-			sort: sortMap[filters.sort] || 'newest',
+			species: currentFilters.species || undefined,
+			breed: currentFilters.breed?.trim() || undefined,
+			cityStreet,
+			ageFrom: parseAge(currentFilters.ageFrom),
+			ageTo: parseAge(currentFilters.ageTo),
+			ageUnit: currentFilters.ageUnit || 'years',
+			sort: sortMap[currentFilters.sort] || 'newest',
 			page,
-			limit: pagination.pageSize, // <<< PAGINACJA
+			limit: pagination.pageSize,
 		};
 
 		try {
@@ -186,13 +241,22 @@ const MainPage = () => {
 			console.error('Apply filters error:', e);
 			setAllPetsData([]);
 			setPetsData([]);
-			setPagination({ page: 1, pageSize: PAGE_SIZE, total: 0, totalPages: 1 });
+			setPagination({
+				page: 1,
+				pageSize: PAGE_SIZE,
+				total: 0,
+				totalPages: 1,
+			});
+		} finally {
+			// po filtrowaniu panel się zamyka
+			setFiltersOpen(false);
 		}
 	};
 
 	const onResetFilters = async () => {
 		setFilters(INITIAL_FILTERS);
 		setAppliedFilters(null);
+		setAgeError('');
 		await fetchPetsData(activeTab, 1);
 	};
 
@@ -232,6 +296,16 @@ const MainPage = () => {
 			if (!LETTERS_REGEX.test(text)) e.preventDefault();
 		},
 	};
+
+	const [sortOpen, setSortOpen] = useState(false);
+	const handleSortChange = (e) => {
+		const value = e.target.value;
+		const newFilters = { ...filters, sort: value };
+		setFilters(newFilters);
+		// od razu sortujemy z nowym zestawem filtrów
+		onApplyFilters(1, newFilters);
+	};
+
 	const selectedPetId = searchParams.get('petId');
 	const type = searchParams.get('type');
 	console.log(petsData);
@@ -407,24 +481,90 @@ const MainPage = () => {
 					</button>
 				</div>
 
-				{/* Pasek z lejem + avatar */}
+				{/* Pasek z lejem + sortowanie + avatar */}
 				<div className='relative w-full flex items-center justify-between'>
-					{/* Lejek */}
-					<button
-						onClick={() => setFiltersOpen((s) => !s)}
-						className='w-[50px] h-[50px] bg-cta rounded-xl fill-text p-1 cursor-pointer'
-						title='Filtry'
-						aria-label='Filtry'
-					>
-						<svg
-							xmlns='http://www.w3.org/2000/svg'
-							viewBox='0 0 640 640'
-							className='w-full h-full'
+					{/* LEWA STRONA: lejek + sortowanie */}
+					<div className='flex items-center gap-3'>
+						{/* Lejek */}
+						<button
+							onClick={() => setFiltersOpen((s) => !s)}
+							className='w-[50px] h-[50px] bg-cta rounded-xl fill-text p-1 cursor-pointer'
+							title='Filtry'
+							aria-label='Filtry'
 						>
-							<path d='M96 128C83.1 128 71.4 135.8 66.4 147.8C61.4 159.8 64.2 173.5 73.4 182.6L256 365.3L256 480C256 488.5 259.4 496.6 265.4 502.6L329.4 566.6C338.6 575.8 352.3 578.5 364.3 573.5C376.3 568.5 384 556.9 384 544L384 365.3L566.6 182.7C575.8 173.5 578.5 159.8 573.5 147.8C568.5 135.8 556.9 128 544 128L96 128z' />
-						</svg>
-					</button>
+							<svg
+								xmlns='http://www.w3.org/2000/svg'
+								viewBox='0 0 640 640'
+								className='w-full h-full'
+							>
+								<path d='M96 128C83.1 128 71.4 135.8 66.4 147.8C61.4 159.8 64.2 173.5 73.4 182.6L256 365.3L256 480C256 488.5 259.4 496.6 265.4 502.6L329.4 566.6C338.6 575.8 352.3 578.5 364.3 573.5C376.3 568.5 384 556.9 384 544L384 365.3L566.6 182.7C575.8 173.5 578.5 159.8 573.5 147.8C568.5 135.8 556.9 128 544 128L96 128z' />
+							</svg>
+						</button>
 
+						{/* SORTOWANIE – przycisk */}
+						<div className='relative flex-1 max-w-[260px]'>
+							<button
+								onClick={() => setSortOpen((s) => !s)}
+								className='w-full flex items_center justify-between bg-secondary rounded-xl px-4 py-2 text-text cursor-pointer shadow-md border border-gray-700'
+							>
+								<span className='font-semibold'>Sortuj:</span>
+								<span>
+									{{
+										newest: 'Najnowsze',
+										oldest: 'Najstarsze',
+										ageAsc: 'Wiek rosnąco',
+										ageDesc: 'Wiek malejąco',
+									}[filters.sort]}
+								</span>
+
+								<svg
+									xmlns='http://www.w3.org/2000/svg'
+									className={`w-4 h-4 transition-transform ${
+										sortOpen ? 'rotate-180' : ''
+									}`}
+									fill='none'
+									viewBox='0 0 24 24'
+									stroke='currentColor'
+								>
+									<path
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										strokeWidth={2}
+										d='M19 9l-7 7-7-7'
+									/>
+								</svg>
+							</button>
+
+							{/* Dropdown sortowania */}
+							{sortOpen && (
+								<div className='absolute left-0 mt-2 w-full bg-secondary rounded-xl shadow-lg border border-gray-700 z-50 py-2'>
+									{[
+										{ value: 'newest', label: 'Najnowsze' },
+										{ value: 'oldest', label: 'Najstarsze' },
+										{ value: 'ageAsc', label: 'Wiek rosnąco' },
+										{ value: 'ageDesc', label: 'Wiek malejąco' },
+									].map((opt) => (
+										<button
+											key={opt.value}
+											className={`w-full text-left px-4 py-2 hover:bg-main text-text ${
+												filters.sort === opt.value
+													? 'font-bold text-cta'
+													: ''
+											}`}
+											onClick={() => {
+												setSortOpen(false);
+												handleSortChange({ target: { value: opt.value } });
+											}}
+										>
+											{opt.label}
+										</button>
+									))}
+								</div>
+							)}
+						</div>
+					</div>
+
+					{/* PRAWA STRONA: AVATAR – zawsze przy prawej krawędzi */}
 					<button
 						onClick={() => setUserPanelActive((prev) => !prev)}
 						className='w-[50px] h-[50px] bg-white rounded-full p-1 z-1 cursor-pointer'
@@ -441,7 +581,7 @@ const MainPage = () => {
 					{/* Panel użytkownika */}
 					{
 						<div
-							className={`absolute right-0 top-[calc(50%-25px)] bg-user-options-fill w-full max-w-[500px] md:w-1/2 lg:w-1/2 z-0 flex flex-col gap-4 rounded-3xl p-3 transition-all duration-300 ease-in-out origin-right ${
+							className={`absolute right-0 top-[calc(50%-25px)] bg-user-options-fill w-full max-w-[500px] md:w-1/2 lg:w-1/2 z-50 flex flex-col gap-4 rounded-3xl p-3 transition-all duration-300 ease-in-out origin-right ${
 								userPanelActive
 									? 'opacity-100 scale-100'
 									: 'opacity-0 scale-95 pointer-events-none'
@@ -566,18 +706,32 @@ const MainPage = () => {
 							/>
 						</div>
 
-						<div className='flex flex-col md:col-span-2'>
-							<label className='text-sm text-accent mb-1'>
-								Miasto , Ulica (oddziel przecinkami)
-							</label>
-							<input
-								className='rounded-xl px-3 py-2 bg-secondary text-text outline-none'
-								placeholder='np. Poznań, Zwierzyniecka'
-								value={filters.location}
-								onChange={(e) =>
-									setFilters((s) => ({ ...s, location: e.target.value }))
-								}
-							/>
+						{/* MIASTO + ULICA W OSOBNYCH POLACH */}
+						<div className='md:col-span-2'>
+							<div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+								<div className='flex flex-col'>
+									<label className='text-sm text-accent mb-1'>Miasto</label>
+									<input
+										className='rounded-xl px-3 py-2 bg-secondary text-text outline-none'
+										placeholder='np. Poznań'
+										value={filters.city}
+										onChange={(e) =>
+											setFilters((s) => ({ ...s, city: e.target.value }))
+										}
+									/>
+								</div>
+								<div className='flex flex-col'>
+									<label className='text-sm text-accent mb-1'>Ulica</label>
+									<input
+										className='rounded-xl px-3 py-2 bg-secondary text-text outline-none'
+										placeholder='np. Zwierzyniecka'
+										value={filters.street}
+										onChange={(e) =>
+											setFilters((s) => ({ ...s, street: e.target.value }))
+										}
+									/>
+								</div>
+							</div>
 						</div>
 
 						{/* WIEK + jednostka */}
@@ -586,27 +740,28 @@ const MainPage = () => {
 								Wiek od ({filters.ageUnit === 'months' ? 'miesiące' : 'lata'})
 							</label>
 							<input
-								type='number'
-								min='1'
-								step='1'
-								inputMode='numeric'
-								pattern='[0-9]*'
+								type='text'
 								className='rounded-xl px-3 py-2 bg-secondary text-text outline-none'
 								placeholder={filters.ageUnit === 'months' ? 'np. 6' : 'np. 1'}
 								value={filters.ageFrom}
 								onKeyDown={(e) => {
-									if (BLOCKED_KEYS.has(e.key)) e.preventDefault();
+									if (
+										e.key.length === 1 &&
+										!AGE_ALLOWED_CHARS.has(e.key)
+									) {
+										e.preventDefault();
+									}
 								}}
 								onPaste={(e) => {
 									const text = (
 										e.clipboardData || window.clipboardData
 									).getData('text');
-									if (!/^\d+$/.test(text)) e.preventDefault();
+									if (!/^[0-9.,\s]*$/.test(text)) e.preventDefault();
 								}}
 								onChange={(e) =>
 									setFilters((s) => ({
 										...s,
-										ageFrom: sanitizeAgeInt(e.target.value),
+										ageFrom: e.target.value,
 									}))
 								}
 							/>
@@ -617,31 +772,39 @@ const MainPage = () => {
 								Wiek do ({filters.ageUnit === 'months' ? 'miesiące' : 'lata'})
 							</label>
 							<input
-								type='number'
-								min='1'
-								step='1'
-								inputMode='numeric'
-								pattern='[0-9]*'
+								type='text'
 								className='rounded-xl px-3 py-2 bg-secondary text-text outline-none'
 								placeholder={filters.ageUnit === 'months' ? 'np. 12' : 'np. 10'}
 								value={filters.ageTo}
 								onKeyDown={(e) => {
-									if (BLOCKED_KEYS.has(e.key)) e.preventDefault();
+									if (
+										e.key.length === 1 &&
+										!AGE_ALLOWED_CHARS.has(e.key)
+									) {
+										e.preventDefault();
+									}
 								}}
 								onPaste={(e) => {
 									const text = (
 										e.clipboardData || window.clipboardData
 									).getData('text');
-									if (!/^\d+$/.test(text)) e.preventDefault();
+									if (!/^[0-9.,\s]*$/.test(text)) e.preventDefault();
 								}}
 								onChange={(e) =>
 									setFilters((s) => ({
 										...s,
-										ageTo: sanitizeAgeInt(e.target.value),
+										ageTo: e.target.value,
 									}))
 								}
 							/>
 						</div>
+
+						{/* komunikat błędu wieku */}
+						{ageError && (
+							<div className='md:col-span-2 text-xs text-red-500 mt-1'>
+								{ageError}
+							</div>
+						)}
 
 						{/* Jednostka wieku */}
 						<div className='flex flex-col md:col-span-2'>
@@ -657,22 +820,6 @@ const MainPage = () => {
 							>
 								<option value='years'>lata</option>
 								<option value='months'>miesiące</option>
-							</select>
-						</div>
-
-						<div className='flex flex-col md:col-span-2'>
-							<label className='text-sm text-accent mb-1'>Sortowanie</label>
-							<select
-								className='rounded-xl px-3 py-2 bg-secondary text-text outline-none'
-								value={filters.sort}
-								onChange={(e) =>
-									setFilters((s) => ({ ...s, sort: e.target.value }))
-								}
-							>
-								<option value='newest'>Najnowsze</option>
-								<option value='oldest'>Najstarsze</option>
-								<option value='ageAsc'>Wiek rosnąco</option>
-								<option value='ageDesc'>Wiek malejąco</option>
 							</select>
 						</div>
 
