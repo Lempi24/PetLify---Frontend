@@ -80,8 +80,8 @@ const MainPage = () => {
 	const [allPetsData, setAllPetsData] = useState([]);
 	const [selectedPosition, setSelectedPosition] = useState(null);
 	const basePin = {
-		latitude: user?.default_location_lat,
-		longitude: user?.default_location_lng,
+		latitude: user?.default_location_lat ?? 52.2297, // Warszawa jak user nie ma przypisanej lokalizacji
+		longitude: user?.default_location_lng ?? 21.0122,
 	};
 	const [filters, setFilters] = useState(INITIAL_FILTERS);
 	const [appliedFilters, setAppliedFilters] = useState(null);
