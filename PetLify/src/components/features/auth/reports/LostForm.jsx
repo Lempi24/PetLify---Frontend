@@ -16,6 +16,8 @@ const LostForm = () => {
 	const [userPetProfiles, setUserPetProfiles] = useState([]);
 	const [loadingProfiles, setLoadingProfiles] = useState(true);
 	const [selectedPetProfile, setSelectedPetProfile] = useState(null);
+	const [userReports, setUserReports] = useState({ lost: [], found: [] });
+	const [loadingReports, setLoadingReports] = useState(true);
 
 	useEffect(() => {
 		const fetchProfiles = async () => {
@@ -52,6 +54,45 @@ const LostForm = () => {
 	}, []);
 
 	const userHasPetProfiles = !loadingProfiles && userPetProfiles.length > 0;
+
+	useEffect(() => {
+		const fetchReports = async () => {
+			try {
+				const token = localStorage.getItem("token");
+				if (!token) return;
+
+				const response = await axios.get(
+					`${import.meta.env.VITE_BACKEND_URL}/reports/fetch-reports`,
+					{
+						headers: { Authorization: `Bearer ${token}` },
+					}
+				);
+
+				console.log("Pobrane zgłoszenia użytkownika:", response.data);
+				setUserReports(response.data);
+			} catch (error) {
+				console.error("Błąd pobierania zgłoszeń:", error);
+				toast.error("Nie udało się pobrać zgłoszeń.");
+			} finally {
+				setLoadingReports(false);
+			}
+		};
+
+		fetchReports();
+	}, []);
+
+	const isDuplicate = (data) => {
+		return userReports.lost.some((report) => {
+			return (
+				report.pet_species?.trim().toLowerCase() === data.petSpecies?.trim().toLowerCase() &&
+				report.pet_breed?.trim().toLowerCase() === data.petBreed?.trim().toLowerCase() &&
+				report.pet_color?.trim().toLowerCase() === data.petColor?.trim().toLowerCase() &&
+				report.pet_name?.trim().toLowerCase() === data.petName?.trim().toLowerCase() &&
+				report.pet_age === data.petAge &&
+				report.pet_size === data.petSize
+			);
+		});
+	};
 
 	const {
 		register,
@@ -237,19 +278,27 @@ const LostForm = () => {
 	const onSubmit = async (data) => {
 		const petDataFromProfile = location.state?.pet || selectedPetProfile;
 		const recaptchaValue = recaptchaRef.current?.getValue();
+
 		if (!recaptchaValue) {
 			toast.error('Proszę potwierdzić, że nie jesteś robotem.');
 			return;
 		}
 
 		console.log('onSubmit został wywołany!');
-		const token = localStorage.getItem('token');
-		console.log('Token:', token);
 
 		if (data.petAgeValue && data.petAgeUnit) {
 			const unitText = data.petAgeUnit === 'months' ? 'miesięcy' : 'lat';
 			data.petAge = `${data.petAgeValue} ${unitText}`;
 		}
+
+		if (!loadingReports && isDuplicate(data)) {
+			toast.error("Takie zgłoszenie już istnieje.");
+			recaptchaRef.current?.reset();
+			return;
+		}
+
+		const token = localStorage.getItem('token');
+		console.log('Token:', token);
 
 		console.log('Form data przed wysyłką:', data);
 
