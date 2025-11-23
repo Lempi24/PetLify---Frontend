@@ -9,7 +9,7 @@ import useAuth from '../hooks/useAuth';
 import { useUser } from '../context/UserContext';
 import AuthForm from '../components/features/auth/AuthForm';
 import { GoogleMap, LoadScript, OverlayView } from '@react-google-maps/api';
-
+import MainPageSkeleton from '../components/skeletons/MainPageSkeleton';
 const INITIAL_FILTERS = {
 	species: '',
 	breed: '',
@@ -22,7 +22,7 @@ const INITIAL_FILTERS = {
 	sort: 'newest',
 };
 
-const PAGE_SIZE = 3; // <<< PAGINACJA: ile kart na stronę
+const PAGE_SIZE = 20; // <<< PAGINACJA: ile kart na stronę
 
 // ---- Wiek: tylko cyfry, min=1; blokada myślnika itp. ----
 function sanitizeAgeInt(v) {
@@ -80,13 +80,13 @@ const MainPage = () => {
 	const [allPetsData, setAllPetsData] = useState([]);
 	const [selectedPosition, setSelectedPosition] = useState(null);
 	const basePin = {
-		latitude: 52.4057,
-		longitude: 16.9313,
+		latitude: user?.default_location_lat,
+		longitude: user?.default_location_lng,
 	};
 	const [filters, setFilters] = useState(INITIAL_FILTERS);
 	const [appliedFilters, setAppliedFilters] = useState(null);
 	const [ageError, setAgeError] = useState('');
-
+	const [loading, setLoading] = useState(false);
 	const petSpeciesTypes = [
 		{ value: '', label: '-- Wybierz --' },
 		{ value: 'dog', label: 'Pies' },
@@ -98,6 +98,7 @@ const MainPage = () => {
 	];
 
 	const fetchPetsData = async (type, page = 1) => {
+		setLoading(true);
 		setActiveTab(type);
 		setAppliedFilters(null);
 
@@ -128,6 +129,8 @@ const MainPage = () => {
 			setAllPetsData([]);
 			setPetsData([]);
 			setPagination({ page: 1, pageSize: PAGE_SIZE, total: 0, totalPages: 1 });
+		} finally {
+			setLoading(false);
 		}
 	};
 
@@ -149,7 +152,7 @@ const MainPage = () => {
 	const onApplyFilters = async (page = 1, filtersOverride = null) => {
 		// bierzemy filtry albo z argumentu, albo ze stanu
 		const currentFilters = filtersOverride || filters;
-
+		setLoading(true);
 		// --- Walidacja: jeśli rasa zawiera coś innego niż litery/spacje,
 		// to nie wołamy backendu — od razu pokazujemy "Brak wyników..."
 		if (!isLettersOrEmpty(currentFilters.breed)) {
@@ -173,7 +176,10 @@ const MainPage = () => {
 			typeof v === 'undefined' ||
 			/^\d+$/.test(String(v).trim());
 
-		if (!isIntOrEmpty(currentFilters.ageFrom) || !isIntOrEmpty(currentFilters.ageTo)) {
+		if (
+			!isIntOrEmpty(currentFilters.ageFrom) ||
+			!isIntOrEmpty(currentFilters.ageTo)
+		) {
 			setAgeError('Wiek musi być liczbą całkowitą');
 			return; // przerywamy – nie filtrujemy
 		}
@@ -249,6 +255,7 @@ const MainPage = () => {
 			});
 		} finally {
 			// po filtrowaniu panel się zamyka
+			setLoading(false);
 			setFiltersOpen(false);
 		}
 	};
@@ -308,7 +315,7 @@ const MainPage = () => {
 
 	const selectedPetId = searchParams.get('petId');
 	const type = searchParams.get('type');
-	console.log(petsData);
+	console.log(user);
 	return (
 		<div className='relative bg-secondary flex lg:h-screen'>
 			<div className='lg:flex lg:w-4/10  items-center justify-center overflow-y-hidden hidden'>
@@ -505,16 +512,18 @@ const MainPage = () => {
 						<div className='relative flex-1 max-w-[260px]'>
 							<button
 								onClick={() => setSortOpen((s) => !s)}
-								className='w-full flex items_center justify-between bg-secondary rounded-xl px-4 py-2 text-text cursor-pointer shadow-md border border-gray-700'
+								className='w-full flex gap-2 items-center justify-between rounded-xl px-4 py-2 cursor-pointer border border-cta'
 							>
 								<span className='font-semibold'>Sortuj:</span>
 								<span>
-									{{
-										newest: 'Najnowsze',
-										oldest: 'Najstarsze',
-										ageAsc: 'Wiek rosnąco',
-										ageDesc: 'Wiek malejąco',
-									}[filters.sort]}
+									{
+										{
+											newest: 'Najnowsze',
+											oldest: 'Najstarsze',
+											ageAsc: 'Wiek rosnąco',
+											ageDesc: 'Wiek malejąco',
+										}[filters.sort]
+									}
 								</span>
 
 								<svg
@@ -547,9 +556,7 @@ const MainPage = () => {
 										<button
 											key={opt.value}
 											className={`w-full text-left px-4 py-2 hover:bg-main text-text ${
-												filters.sort === opt.value
-													? 'font-bold text-cta'
-													: ''
+												filters.sort === opt.value ? 'font-bold text-cta' : ''
 											}`}
 											onClick={() => {
 												setSortOpen(false);
@@ -567,7 +574,7 @@ const MainPage = () => {
 					{/* PRAWA STRONA: AVATAR – zawsze przy prawej krawędzi */}
 					<button
 						onClick={() => setUserPanelActive((prev) => !prev)}
-						className='w-[50px] h-[50px] bg-white rounded-full p-1 z-1 cursor-pointer'
+						className='w-[50px] h-[50px] bg-white rounded-full p-1 z-30 cursor-pointer'
 					>
 						<svg
 							xmlns='http://www.w3.org/2000/svg'
@@ -581,7 +588,7 @@ const MainPage = () => {
 					{/* Panel użytkownika */}
 					{
 						<div
-							className={`absolute right-0 top-[calc(50%-25px)] bg-user-options-fill w-full max-w-[500px] md:w-1/2 lg:w-1/2 z-50 flex flex-col gap-4 rounded-3xl p-3 transition-all duration-300 ease-in-out origin-right ${
+							className={`absolute right-0 top-[calc(50%-25px)] bg-user-options-fill w-full max-w-[500px] md:w-1/2 lg:w-1/2 z-20 flex flex-col gap-4 rounded-3xl p-3 transition-all duration-300 ease-in-out origin-right ${
 								userPanelActive
 									? 'opacity-100 scale-100'
 									: 'opacity-0 scale-95 pointer-events-none'
@@ -745,10 +752,7 @@ const MainPage = () => {
 								placeholder={filters.ageUnit === 'months' ? 'np. 6' : 'np. 1'}
 								value={filters.ageFrom}
 								onKeyDown={(e) => {
-									if (
-										e.key.length === 1 &&
-										!AGE_ALLOWED_CHARS.has(e.key)
-									) {
+									if (e.key.length === 1 && !AGE_ALLOWED_CHARS.has(e.key)) {
 										e.preventDefault();
 									}
 								}}
@@ -777,10 +781,7 @@ const MainPage = () => {
 								placeholder={filters.ageUnit === 'months' ? 'np. 12' : 'np. 10'}
 								value={filters.ageTo}
 								onKeyDown={(e) => {
-									if (
-										e.key.length === 1 &&
-										!AGE_ALLOWED_CHARS.has(e.key)
-									) {
+									if (e.key.length === 1 && !AGE_ALLOWED_CHARS.has(e.key)) {
 										e.preventDefault();
 									}
 								}}
@@ -842,7 +843,9 @@ const MainPage = () => {
 
 				{/* LISTA KART */}
 				<div className='custom-scroll flex flex-col w-full gap-2 lg:overflow-y-scroll pr-2'>
-					{petsData.length === 0 ? (
+					{loading ? (
+						<MainPageSkeleton />
+					) : petsData.length === 0 ? (
 						<div className='text-accent text-center py-8'>
 							Brak wyników dla wybranych filtrów.
 						</div>
@@ -856,7 +859,7 @@ const MainPage = () => {
 				{pagination.total > 0 && (
 					<div className='w-full flex items-center justify-center gap-2 sm:gap-3 py-3'>
 						<button
-							className='bg-cta rounded-xl px-3 py-2 cursor-pointer disabled:opacity-50 flex items-center gap-1'
+							className='bg-cta rounded-xl px-3 py-2 cursor-pointer disabled:opacity-50 disabled:cursor-auto flex items-center gap-1'
 							onClick={goPrev}
 							disabled={pagination.page <= 1}
 						>
@@ -887,7 +890,7 @@ const MainPage = () => {
 						</div>
 
 						<button
-							className='bg-cta rounded-xl px-3 py-2 cursor-pointer disabled:opacity-50 flex items-center gap-1'
+							className='bg-cta rounded-xl px-3 py-2 cursor-pointer disabled:opacity-50 disabled:cursor-auto flex items-center gap-1'
 							onClick={goNext}
 							disabled={pagination.page >= pagination.totalPages}
 						>

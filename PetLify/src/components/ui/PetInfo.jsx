@@ -13,7 +13,8 @@ import { getSocket } from '../../lib/socket';
 
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import PetDetailSkeleton from '../skeletons/PetDetailSkeleton';
+import PetInfoSkeleton from '../skeletons/PetInfoSkeleton';
+import { toast } from 'react-toastify';
 // Proste pole edytowalne używane w trybie "edit"
 const EditableField = ({
 	value,
@@ -27,7 +28,7 @@ const EditableField = ({
 			type={type}
 			value={value ?? ''}
 			onChange={(e) => onChange(e.target.value)}
-			className='border rounded px-2 py-1 text-accent'
+			className='border border-cta rounded px-2 py-1 text-accent'
 		/>
 	) : (
 		<p className={`text-accent ${className}`}>{value}</p>
@@ -164,22 +165,39 @@ const PetInfo = ({
 			navigate('/');
 			return;
 		}
+		const payload = {
+			id: pet.id,
+			pet_name: pet.pet_name,
+			pet_species: pet.pet_species,
+			pet_breed: pet.pet_breed,
+			pet_age: pet.pet_age,
+			description: pet.description,
+			street: pet.street,
+			city: pet.city,
+			photo_url: pet.photo_url,
+			type: reportType,
+			status: 'pending',
+		};
 		try {
+			console.log(pet);
 			await axios.put(
 				import.meta.env.VITE_BACKEND_URL + `/reports/edit-report`,
-				pet,
+				payload,
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
+			toast.success('Zgłoszenie zostało zaktualizowane.');
+			setSelectedPetId(null);
 		} catch (error) {
 			console.error('Błąd zapisu: ', error);
+			toast.error('Wystąpił błąd podczas zapisu zgłoszenia.');
 		}
 	};
 	if (!pet) {
-		return <PetDetailSkeleton />;
+		return <PetInfoSkeleton />;
 	}
 	return (
 		<div
-			className='fixed backdrop-blur-2xl h-screen w-screen z-40'
+			className='fixed backdrop-blur-2xl h-screen w-screen z-100'
 			onClick={() => setSelectedPetId(null)}
 		>
 			<div
@@ -216,18 +234,31 @@ const PetInfo = ({
 				</div>
 				{/* Dane zwierzaka */}
 				<div className='flex flex-col py-8 border-b-2 border-accent gap-4'>
+					{/* Gatunek */}
 					<div className='flex items-center gap-2'>
 						<p className='bold text-xl'>Gatunek:</p>
-						<EditableField
-							value={
-								petSpeciesTypes[pet?.pet_species] ||
-								pet?.pet_species ||
-								'Nie podano'
-							}
-							onChange={(v) => setPet({ ...pet, pet_species: v })}
-							mode={mode}
-						/>
+						{mode === 'edit' ? (
+							<select
+								value={pet?.pet_species ?? ''}
+								onChange={(e) =>
+									setPet({ ...pet, pet_species: e.target.value })
+								}
+								className='border border-cta rounded px-2 py-1 text-accent bg-secondary'
+							>
+								{Object.keys(petSpeciesTypes).map((key) => (
+									<option key={key} value={key}>
+										{petSpeciesTypes[key]}
+									</option>
+								))}
+							</select>
+						) : (
+							<p className='text-accent'>
+								{petSpeciesTypes[pet?.pet_species] || 'Nie podano'}
+							</p>
+						)}
 					</div>
+
+					{/* Rasa */}
 					<div className='flex items-center gap-2'>
 						<p className='bold text-xl'>Rasa:</p>
 						<EditableField
@@ -236,14 +267,39 @@ const PetInfo = ({
 							mode={mode}
 						/>
 					</div>
+
+					{/* Wiek */}
 					<div className='flex items-center gap-2'>
 						<p className='bold text-xl'>Wiek:</p>
-						<EditableField
-							value={pet?.pet_age || 'Nie podano'}
-							onChange={(v) => setPet({ ...pet, pet_age: v })}
-							mode={mode}
-						/>
+						{mode === 'edit' ? (
+							<div className='flex gap-0 rounded-md overflow-hidden'>
+								<input
+									type='number'
+									value={pet?.pet_age_value ?? ''}
+									onChange={(e) =>
+										setPet({ ...pet, pet_age_value: e.target.value })
+									}
+									className='border border-cta px-2 py-1 text-accent'
+								/>
+								<select
+									value={pet?.pet_age_unit ?? 'months'}
+									onChange={(e) =>
+										setPet({ ...pet, pet_age_unit: e.target.value })
+									}
+									className='w-32 px-3 py-1 border border-cta rounded-r-md bg-secondary text-text'
+								>
+									<option value='months'>miesięcy</option>
+									<option value='years'>lat</option>
+								</select>
+							</div>
+						) : (
+							<p className='text-accent'>
+								{pet?.pet_age_value} {pet?.pet_age_unit || ''}
+							</p>
+						)}
 					</div>
+
+					{/* Kolor */}
 					<div className='flex items-center gap-2'>
 						<p className='bold text-xl'>Kolor:</p>
 						<EditableField
@@ -252,24 +308,48 @@ const PetInfo = ({
 							mode={mode}
 						/>
 					</div>
+
+					{/* Rozmiar */}
 					<div className='flex items-center gap-2'>
 						<p className='bold text-xl'>Rozmiar:</p>
-						<EditableField
-							value={petSizes[pet?.pet_size] || 'Nie podano'}
-							onChange={(v) => setPet({ ...pet, pet_size: v })}
-							mode={mode}
-						/>
+						{mode === 'edit' ? (
+							<select
+								value={pet?.pet_size ?? ''}
+								onChange={(e) => setPet({ ...pet, pet_size: e.target.value })}
+								className='border border-cta rounded px-2 py-1 text-accent bg-secondary'
+							>
+								{Object.keys(petSizes).map((key) => (
+									<option key={key} value={key}>
+										{petSizes[key]}
+									</option>
+								))}
+							</select>
+						) : (
+							<p className='text-accent'>
+								{petSizes[pet?.pet_size] || 'Nie podano'}
+							</p>
+						)}
 					</div>
 
+					{/* Znaki szczególne */}
 					<div className='space-y-2 mt-6 border-t border-secondary pt-4'>
 						<p className='font-bold text-xl'>Znaki szczególne:</p>
-						<EditableField
-							value={pet?.description || 'Brak opisu'}
-							onChange={(v) => setPet({ ...pet, description: v })}
-							mode={mode}
-						/>
+						{mode === 'edit' ? (
+							<textarea
+								value={pet?.description || ''}
+								onChange={(e) =>
+									setPet({ ...pet, description: e.target.value })
+								}
+								placeholder='Opisz cechy charakterystyczne zwierzęcia...'
+								className='w-full p-2 rounded-md bg-secondary border border-cta text-accent'
+								rows={4}
+							/>
+						) : (
+							<p className='text-accent'>{pet?.description || 'Brak opisu'}</p>
+						)}
 					</div>
 
+					{/* Lokalizacja */}
 					{authUser && (
 						<div className='space-y-2 mt-6 border-t border-secondary pt-4'>
 							<p className='font-bold text-xl'>
@@ -281,14 +361,14 @@ const PetInfo = ({
 										type='text'
 										value={pet?.street ?? ''}
 										onChange={(e) => setPet({ ...pet, street: e.target.value })}
-										className='border rounded px-2 py-1 text-accent'
+										className='border border-cta rounded px-2 py-1 text-accent'
 										placeholder='Ulica'
 									/>
 									<input
 										type='text'
 										value={pet?.city ?? ''}
 										onChange={(e) => setPet({ ...pet, city: e.target.value })}
-										className='border rounded px-2 py-1 text-accent'
+										className='border border-cta rounded px-2 py-1 text-accent'
 										placeholder='Miasto'
 									/>
 								</div>
@@ -301,6 +381,7 @@ const PetInfo = ({
 						</div>
 					)}
 				</div>
+
 				{authUser ? (
 					<>
 						{/* Mapa – placeholder */}
