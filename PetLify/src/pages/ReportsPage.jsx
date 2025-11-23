@@ -160,16 +160,15 @@ const ReportsPage = () => {
 						)}
 					</>
 				)}
-
-				{selectedPet && (
-					<PetInfo
-						petId={selectedPet.id}
-						reportType={selectedPet.type}
-						setSelectedPetId={() => setSelectedPet(null)}
-						mode={mode}
-					/>
-				)}
 			</div>
+			{selectedPet && (
+				<PetInfo
+					petId={selectedPet.id}
+					reportType={selectedPet.type}
+					setSelectedPetId={() => setSelectedPet(null)}
+					mode={mode}
+				/>
+			)}
 		</div>
 	);
 };
