@@ -2,7 +2,7 @@ const BurgerMenu = ({ isBurgerOpen, handleBurger }) => {
 	return (
 		<div
 			onClick={handleBurger}
-			className='relative flex flex-col items-center justify-center w-[50px] h-[50px] z-1000 lg:hidden'
+			className='relative flex flex-col items-center justify-center w-[50px] h-[50px] z-100 lg:hidden'
 		>
 			<div
 				className={`absolute ${

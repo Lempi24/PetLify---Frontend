@@ -10,19 +10,19 @@ const PetProfilesPage = () => {
 	const [isBurgerOpen, setIsBurgerOpen] = useState(false);
 
 	return (
-		<div className="relative flex">
+		<div className='relative flex'>
 			<SubPagesNav currentPath={currentPath} isBurgerOpen={isBurgerOpen} />
 
-			<div className="flex flex-col gap-6 px-5 w-full h-screen bg-secondary py-5 overflow-y-auto">
-				<div className="flex items-center justify-between pb-4">
-					<h2 className="text-2xl border-b-2 w-full py-5">Profile zwierząt</h2>
+			<div className='flex flex-col gap-6 px-5 w-full h-screen bg-secondary py-5 overflow-y-auto'>
+				<div className='flex items-center justify-between pb-4'>
+					<h2 className='text-2xl border-b-2 w-full py-5'>Profile zwierząt</h2>
 					<BurgerMenu
 						isBurgerOpen={isBurgerOpen}
 						handleBurger={() => setIsBurgerOpen((prev) => !prev)}
 					/>
 				</div>
 
-				<div className="flex-1">
+				<div className='flex-1'>
 					<PetProfiles />
 				</div>
 			</div>
