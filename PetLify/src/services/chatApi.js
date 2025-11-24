@@ -19,6 +19,35 @@ export async function ensureThread({ subject, petId, ownerEmail, partnerEmail })
   return data;
 }
 
+const API_URL = import.meta.env.VITE_BACKEND_URL;
+
+function authHeaders(extra = {}) {
+  const token = localStorage.getItem('token');
+  return {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...extra,
+  };
+}
+
+export async function uploadChatImages(files) {
+  const formData = new FormData();
+  files.forEach((file) => formData.append('images', file));
+
+  const res = await fetch(`${API_URL}/chats/upload-image`, {
+    method: 'POST',
+    headers: authHeaders(), // UWAGA: NIE dodajemy tu Content-Type – ustawia go sam fetch dla FormData
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Nie udało się przesłać zdjęć.');
+  }
+
+  const data = await res.json();
+  return data.attachments || [];
+}
+
 export async function fetchThreads() {
   const { data } = await api.get('/chats/threads');
   return data;

@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { uploadChatImages } from "../../services/chatApi";
 
 function fmt(ts) {
   const d = new Date(ts);
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
+
 function isImage(type = "") {
   return /^image\//i.test(type);
 }
+
 function fileIcon(type = "") {
   if (/pdf$/i.test(type)) return "📄";
   if (/word|officedocument\.word/i.test(type)) return "📝";
@@ -20,23 +23,22 @@ export default function ChatModal({
   onClose,
   partnerName,
   topicName,
-  currentUserId,
+  currentUserId, // UWAGA: tu spodziewamy się emaila z małych liter
   messages,
   onSend, // (text, attachments)
- 
   showTyping = false,
 }) {
   const [text, setText] = useState("");
   const [otherTyping, setOtherTyping] = useState(false);
 
-  // załączniki przed wysłaniem
   const [pending, setPending] = useState([]);
   const fileInputRef = useRef(null);
 
   const listRef = useRef(null);
   const taRef = useRef(null);
 
-  // posortowane + separatory
+  const [linkToOpen, setLinkToOpen] = useState(null);
+
   const sorted = useMemo(
     () =>
       [...(messages || [])].sort(
@@ -63,36 +65,41 @@ export default function ChatModal({
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
     setTimeout(() => taRef.current?.focus(), 0);
-    // nie zależymy od otherTyping, żeby kropki nie wywoływały przewijania
   }, [isOpen, withSeps.length, pending.length]);
 
-  // załączniki
   function openFilePicker() {
     fileInputRef.current?.click();
   }
-  function handleFilesSelected(e) {
+
+  async function handleFilesSelected(e) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    const next = files.map((f) => ({
-      id:
-        crypto?.randomUUID?.() ??
-        String(Date.now() + Math.random()),
-      name: f.name,
-      type: f.type || "application/octet-stream",
-      size: f.size,
-      url: URL.createObjectURL(f), // blob:
-    }));
-    setPending((prev) => [...prev, ...next]);
-    e.target.value = "";
+
+    const imageFiles = files.filter((f) =>
+      f.type?.toLowerCase().startsWith("image/")
+    );
+
+    if (imageFiles.length === 0) {
+      e.target.value = "";
+      return;
+    }
+
+    try {
+      const uploaded = await uploadChatImages(imageFiles);
+      setPending((prev) => [...prev, ...uploaded]);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      e.target.value = "";
+    }
   }
+
   function removePending(id) {
-    setPending((prev) => {
-      const item = prev.find((p) => p.id === id);
-      if (item?.url) URL.revokeObjectURL(item.url);
-      return prev.filter((p) => p.id !== id);
-    });
+    setPending((prev) => prev.filter((p) => p.id !== id));
   }
+
   function openAttachment(att) {
+    if (!att?.url) return;
     window.open(att.url, "_blank", "noopener,noreferrer");
   }
 
@@ -104,11 +111,66 @@ export default function ChatModal({
     setText("");
     setPending([]);
 
-    // Kropki tylko jeśli włączone flagą
     if (showTyping) {
       setOtherTyping(true);
       setTimeout(() => setOtherTyping(false), 1200);
     }
+  }
+
+  // linki
+  function requestOpenLink(url) {
+    setLinkToOpen(url);
+  }
+
+  function handleLinkDecision(open) {
+    if (open && linkToOpen) {
+      window.open(linkToOpen, "_blank", "noopener,noreferrer");
+    }
+    setLinkToOpen(null);
+  }
+
+  function renderTextWithLinks(text = "") {
+    if (!text) return null;
+
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = urlRegex.exec(text)) !== null) {
+      const urlText = match[0];
+      const start = match.index;
+
+      if (start > lastIndex) {
+        parts.push(text.slice(lastIndex, start));
+      }
+
+      let href = urlText;
+      if (!/^https?:\/\//i.test(href)) {
+        href = "https://" + href;
+      }
+
+      parts.push(
+        <button
+          key={`${href}-${start}`}
+          className="underline font-semibold"
+          onClick={(e) => {
+            e.stopPropagation();
+            requestOpenLink(href);
+          }}
+        >
+          {urlText}
+        </button>
+      );
+
+      lastIndex = start + urlText.length;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return parts;
   }
 
   if (!isOpen) return null;
@@ -148,7 +210,8 @@ export default function ChatModal({
               Rozmowa z {partnerName}
             </div>
             <div className="text-xs text-accent truncate">
-              w sprawie: <span className="font-extrabold text-text">{topicName}</span>
+              w sprawie:{" "}
+              <span className="font-extrabold text-text">{topicName}</span>
             </div>
           </div>
 
@@ -183,11 +246,18 @@ export default function ChatModal({
               );
             }
             const m = it.m;
-            const mine = m.senderId === currentUserId;
+
+            // KLUCZOWE: porównujemy już znormalizowane maile
+            const mine =
+              (m.senderId || "").toLowerCase() ===
+              (currentUserId || "").toLowerCase();
+
             return (
               <div
                 key={m.id}
-                className={`flex my-2 ${mine ? "justify-end" : "justify-start"}`}
+                className={`flex my-2 ${
+                  mine ? "justify-end" : "justify-start"
+                }`}
                 title={fmt(m.createdAt)}
               >
                 <div
@@ -197,7 +267,7 @@ export default function ChatModal({
                       : "bg-user-options-fill text-text rounded-bl-md"
                   }`}
                 >
-                  {m.text}
+                  {renderTextWithLinks(m.text)}
 
                   {!!m.attachments?.length && (
                     <div className="flex flex-col gap-2 mt-2">
@@ -218,7 +288,9 @@ export default function ChatModal({
                           ) : (
                             <span className="text-base">{fileIcon(a.type)}</span>
                           )}
-                          <span className="text-xs max-w-[220px] truncate">{a.name}</span>
+                          <span className="text-xs max-w-[220px] truncate">
+                            {a.name}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -228,7 +300,6 @@ export default function ChatModal({
             );
           })}
 
-          {/* Kropki tylko, gdy showTyping = true */}
           {showTyping && otherTyping && (
             <div className="flex my-2 justify-start">
               <div className="max-w-[78%] px-3 py-2 rounded-2xl bg-user-options-fill rounded-bl-md">
@@ -306,7 +377,6 @@ export default function ChatModal({
           />
 
           <div className="flex items-center gap-2">
-            {/* WYŚLIJ – CTA */}
             <button
               className="w-10 h-10 rounded-full grid place-items-center bg-cta text-main font-extrabold disabled:opacity-60"
               onClick={handleSend}
@@ -315,17 +385,25 @@ export default function ChatModal({
               disabled={!canSend}
             >
               <svg viewBox="0 0 24 24" className="w-5 h-5">
-                <path d="M22 2L11 13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <path d="M22 2l-7 20-4-9-9-4 20-7z" fill="currentColor" />
+                <path
+                  d="M22 2L11 13"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M22 2l-7 20-4-9-9-4 20-7z"
+                  fill="currentColor"
+                />
               </svg>
             </button>
 
-            {/* ZAŁĄCZ */}
             <button
               className="w-10 h-10 rounded-full grid place-items-center bg-cta text-main font-extrabold"
               onClick={openFilePicker}
-              title="Załącz plik"
-              aria-label="Załącz plik"
+              title="Załącz zdjęcie"
+              aria-label="Załącz zdjęcie"
             >
               <svg viewBox="0 0 24 24" className="w-5 h-5">
                 <path
@@ -345,19 +423,40 @@ export default function ChatModal({
               multiple
               className="hidden"
               onChange={handleFilesSelected}
-              accept="
-                image/*,
-                application/pdf,
-                application/msword,
-                application/vnd.openxmlformats-officedocument.wordprocessingml.document,
-                application/vnd.ms-excel,
-                application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,
-                text/plain
-              "
+              accept="image/*"
             />
           </div>
         </div>
       </div>
+
+      {/* POPUP z ostrzeżeniem o linku */}
+      {linkToOpen && (
+        <div className="fixed inset-0 z-[3100] bg-black/60 flex items-center justify-center">
+          <div className="bg-main text-text rounded-2xl p-4 max-w-sm w-[90%] shadow-[0_12px_30px_rgba(0,0,0,.6)] border border-white/10">
+            <h3 className="font-bold text-lg mb-2">Otwierasz zewnętrzny link</h3>
+            <p className="text-sm mb-3">
+              Podany link nie jest zweryfikowany przez naszą stronę.
+              Wchodzisz na własne ryzyko.
+            </p>
+            <p className="text-xs break-all text-accent mb-4">{linkToOpen}</p>
+
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-3 py-1 rounded-lg bg-user-options-fill text-sm hover:bg-black/40"
+                onClick={() => handleLinkDecision(false)}
+              >
+                Anuluj
+              </button>
+              <button
+                className="px-3 py-1 rounded-lg bg-cta text-main text-sm font-bold hover:bg-cta/80"
+                onClick={() => handleLinkDecision(true)}
+              >
+                Otwórz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
