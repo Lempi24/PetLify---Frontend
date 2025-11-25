@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useState, useEffect, useRef, use } from 'react';
-import { GoogleMap, LoadScript, Marker, Circle } from '@react-google-maps/api';
+import { GoogleMap, Marker, Circle } from '@react-google-maps/api';
 import ReCAPTCHA from 'react-google-recaptcha';
 
 const LostForm = () => {
@@ -58,7 +58,7 @@ const LostForm = () => {
 	useEffect(() => {
 		const fetchReports = async () => {
 			try {
-				const token = localStorage.getItem("token");
+				const token = localStorage.getItem('token');
 				if (!token) return;
 
 				const response = await axios.get(
@@ -68,11 +68,11 @@ const LostForm = () => {
 					}
 				);
 
-				console.log("Pobrane zgłoszenia użytkownika:", response.data);
+				console.log('Pobrane zgłoszenia użytkownika:', response.data);
 				setUserReports(response.data);
 			} catch (error) {
-				console.error("Błąd pobierania zgłoszeń:", error);
-				toast.error("Nie udało się pobrać zgłoszeń.");
+				console.error('Błąd pobierania zgłoszeń:', error);
+				toast.error('Nie udało się pobrać zgłoszeń.');
 			} finally {
 				setLoadingReports(false);
 			}
@@ -84,10 +84,14 @@ const LostForm = () => {
 	const isDuplicate = (data) => {
 		return userReports.lost.some((report) => {
 			return (
-				report.pet_species?.trim().toLowerCase() === data.petSpecies?.trim().toLowerCase() &&
-				report.pet_breed?.trim().toLowerCase() === data.petBreed?.trim().toLowerCase() &&
-				report.pet_color?.trim().toLowerCase() === data.petColor?.trim().toLowerCase() &&
-				report.pet_name?.trim().toLowerCase() === data.petName?.trim().toLowerCase() &&
+				report.pet_species?.trim().toLowerCase() ===
+					data.petSpecies?.trim().toLowerCase() &&
+				report.pet_breed?.trim().toLowerCase() ===
+					data.petBreed?.trim().toLowerCase() &&
+				report.pet_color?.trim().toLowerCase() ===
+					data.petColor?.trim().toLowerCase() &&
+				report.pet_name?.trim().toLowerCase() ===
+					data.petName?.trim().toLowerCase() &&
 				report.pet_age === data.petAge &&
 				report.pet_size === data.petSize
 			);
@@ -292,7 +296,7 @@ const LostForm = () => {
 		}
 
 		if (!loadingReports && isDuplicate(data)) {
-			toast.error("Takie zgłoszenie już istnieje.");
+			toast.error('Takie zgłoszenie już istnieje.');
 			recaptchaRef.current?.reset();
 			return;
 		}
@@ -713,97 +717,174 @@ const LostForm = () => {
 							control={control}
 							rules={{ required: 'Musisz zaznaczyć lokalizację na mapie' }}
 							render={({ field }) => (
-								<LoadScript
-									googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
-								>
-									<GoogleMap
-										mapContainerStyle={{ width: '100%', height: '300px' }}
-										center={
-											selectedPosition || {
-												lat: basePin.latitude,
-												lng: basePin.longitude,
-											}
+								<GoogleMap
+									mapContainerStyle={{ width: '100%', height: '300px' }}
+									center={
+										selectedPosition || {
+											lat: basePin.latitude,
+											lng: basePin.longitude,
 										}
-										zoom={13}
-										onClick={async (event) => {
-											const lat = event.latLng.lat();
-											const lng = event.latLng.lng();
+									}
+									zoom={13}
+									onClick={async (event) => {
+										const lat = event.latLng.lat();
+										const lng = event.latLng.lng();
 
-											setSelectedPosition({ lat, lng });
+										setSelectedPosition({ lat, lng });
 
-											field.onChange(`${lng},${lat}`);
+										field.onChange(`${lng},${lat}`);
 
-											try {
-												const res = await axios.get(
-													`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${
-														import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-													}`
-												);
+										try {
+											const res = await axios.get(
+												`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${
+													import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+												}`
+											);
 
-												if (res.data.status === 'OK') {
-													const components =
-														res.data.results[0].address_components;
-													let street = '';
-													let city = '';
+											if (res.data.status === 'OK') {
+												const components =
+													res.data.results[0].address_components;
+												let street = '';
+												let city = '';
 
-													components.forEach((c) => {
-														if (c.types.includes('route')) street = c.long_name;
-														if (c.types.includes('locality'))
-															city = c.long_name;
-													});
+												components.forEach((c) => {
+													if (c.types.includes('route')) street = c.long_name;
+													if (c.types.includes('locality')) city = c.long_name;
+												});
 
-													setValue('lostStreet', street, {
-														shouldValidate: true,
-													});
-													setValue('lostCity', city, { shouldValidate: true });
-													toast.success('Lokalizacja została ustawiona');
-												} else {
-													toast.error('Nie udało się pobrać adresu');
-												}
-											} catch (err) {
-												console.error(err);
-												toast.error('Błąd przy pobieraniu adresu');
+												setValue('lostStreet', street, {
+													shouldValidate: true,
+												});
+												setValue('lostCity', city, { shouldValidate: true });
+												toast.success('Lokalizacja została ustawiona');
+											} else {
+												toast.error('Nie udało się pobrać adresu');
 											}
-										}}
-										options={{
-											mapTypeControl: false,
-											streetViewControl: false,
-										}}
-									>
-										{selectedPosition && (
-											<>
-												<Marker
-													position={selectedPosition}
-													icon={{
-														url:
-															'data:image/svg+xml;charset=UTF-8,' +
-															encodeURIComponent(`
+										} catch (err) {
+											console.error(err);
+											toast.error('Błąd przy pobieraniu adresu');
+										}
+									}}
+									options={{
+										mapTypeControl: false,
+										streetViewControl: false,
+										clickableIcons: false,
+										styles: [
+											{
+												elementType: 'geometry',
+												stylers: [{ color: '#1e201e' }],
+											},
+
+											{
+												elementType: 'labels.text.fill',
+												stylers: [{ color: '#b7bdca' }],
+											},
+											{
+												elementType: 'labels.text.stroke',
+												stylers: [{ color: '#1e201e' }],
+											},
+
+											{
+												featureType: 'road',
+												elementType: 'geometry',
+												stylers: [{ color: '#3c3d37' }],
+											},
+											{
+												featureType: 'road',
+												elementType: 'geometry.stroke',
+												stylers: [{ color: '#272a27' }],
+											},
+											{
+												featureType: 'road',
+												elementType: 'labels.text.fill',
+												stylers: [{ color: '#b7bdca' }],
+											},
+
+											{
+												featureType: 'water',
+												elementType: 'geometry',
+												stylers: [{ color: '#272a27' }],
+											},
+											{
+												featureType: 'water',
+												elementType: 'labels.text.fill',
+												stylers: [{ color: '#767b86' }],
+											},
+
+											{
+												featureType: 'landscape',
+												elementType: 'geometry',
+												stylers: [{ color: '#242624' }],
+											},
+											{
+												featureType: 'poi.park',
+												elementType: 'geometry',
+												stylers: [{ color: '#272a27' }],
+											},
+
+											{
+												featureType: 'poi',
+												elementType: 'all',
+												stylers: [{ visibility: 'off' }],
+											},
+
+											{
+												featureType: 'administrative',
+												elementType: 'geometry',
+												stylers: [{ color: '#3c3d37' }],
+											},
+											{
+												featureType: 'administrative.country',
+												elementType: 'labels.text.fill',
+												stylers: [{ color: '#b7bdca' }],
+											},
+
+											{
+												featureType: 'road.highway',
+												elementType: 'geometry',
+												stylers: [{ color: '#ce7f31' }],
+											},
+											{
+												featureType: 'road.highway',
+												elementType: 'geometry.stroke',
+												stylers: [{ color: '#b56e2c' }],
+											},
+										],
+									}}
+								>
+									{selectedPosition && (
+										<>
+											<Marker
+												position={selectedPosition}
+												icon={{
+													url:
+														'data:image/svg+xml;charset=UTF-8,' +
+														encodeURIComponent(`
 										<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#fe7f00">
 										<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
 										</svg>`),
-														scaledSize: new window.google.maps.Size(40, 40),
-													}}
-												/>
-												<Circle
-													center={selectedPosition}
-													radius={250}
-													options={{
-														fillColor: '#fe7f00',
-														fillOpacity: 0.1,
-														strokeColor: '#fe7f00',
-														strokeOpacity: 0.4,
-														strokeWeight: 2,
-														clickable: false,
-														draggable: false,
-														editable: false,
-														visible: true,
-														zIndex: 1,
-													}}
-												/>
-											</>
-										)}
-									</GoogleMap>
-								</LoadScript>
+													scaledSize: new window.google.maps.Size(40, 40),
+												}}
+											/>
+											<Circle
+												center={selectedPosition}
+												radius={250}
+												options={{
+													fillColor: '#fe7f00',
+													fillOpacity: 0.1,
+													strokeColor: '#fe7f00',
+													strokeOpacity: 0.4,
+													strokeWeight: 2,
+													clickable: false,
+													draggable: false,
+													editable: false,
+													visible: true,
+													zIndex: 1,
+												}}
+											/>
+										</>
+									)}
+								</GoogleMap>
 							)}
 						/>
 

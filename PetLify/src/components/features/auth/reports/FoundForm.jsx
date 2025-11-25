@@ -310,8 +310,12 @@ const FoundForm = () => {
 									type='number'
 									placeholder='Np. 5'
 									{...register('petAgeValue', {
-										min: { value: 1, message: 'Wiek nie może być ujemny bądź zerowy' },
-										validate: (value) => validateAge(value, watch('petAgeUnit')),
+										min: {
+											value: 1,
+											message: 'Wiek nie może być ujemny bądź zerowy',
+										},
+										validate: (value) =>
+											validateAge(value, watch('petAgeUnit')),
 									})}
 									error={errors.petAgeValue}
 									className='rounded-r-none border-r-0'
@@ -365,31 +369,27 @@ const FoundForm = () => {
 					</div>
 
 					<div>
-						<LoadScript
-							googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
-							libraries={['places']}
+						<label className='block text-sm font-medium mb-1'>
+							Podaj miejsce odnalezienia
+						</label>
+						<Autocomplete
+							options={{
+								types: ['address'],
+								componentRestrictions: { country: 'pl' },
+							}}
+							onLoad={(autocomplete) => {
+								autocompleteRef.current = autocomplete;
+							}}
+							onPlaceChanged={onChosenPlace}
 						>
-							<label className='block text-sm font-medium mb-1'>
-								Podaj miejsce odnalezienia
-							</label>
-							<Autocomplete
-								options={{
-									types: ['address'],
-									componentRestrictions: { country: 'pl' },
-								}}
-								onLoad={(autocomplete) => {
-									autocompleteRef.current = autocomplete;
-								}}
-								onPlaceChanged={onChosenPlace}
-							>
-								<input
-									type='text'
-									placeholder='Wpisz adres...'
-									className='w-full p-2 rounded-md bg-secondary border border-cta'
-									name='foundPlace'
-								/>
-							</Autocomplete>
-						</LoadScript>
+							<input
+								type='text'
+								placeholder='Wpisz adres...'
+								className='w-full p-2 rounded-md bg-secondary border border-cta'
+								name='foundPlace'
+							/>
+						</Autocomplete>
+
 						<input type='hidden' {...register('latitude')} />
 						<input type='hidden' {...register('longitude')} />
 					</div>

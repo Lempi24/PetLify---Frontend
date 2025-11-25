@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import FormInput from './FormInput';
 import { useForm } from 'react-hook-form';
 import { useUser } from '../../context/UserContext';
-import { LoadScript, Autocomplete } from '@react-google-maps/api';
+import {  Autocomplete } from '@react-google-maps/api';
 import { useRef } from 'react';
 
 const userIconPath =
@@ -273,27 +273,23 @@ const SettingsPanel = ({ type, onClose }) => {
 			)}
 			{type === 'editLocation' && (
 				<div className='space-y-3'>
-					<LoadScript
-						googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
-						libraries={['places']}
+					<Autocomplete
+						options={{
+							types: ['(cities)'],
+							componentRestrictions: { country: 'pl' },
+						}}
+						onLoad={(autocomplete) => {
+							autocompleteRef.current = autocomplete;
+						}}
+						onPlaceChanged={onChosenPlace}
 					>
-						<Autocomplete
-							options={{
-								types: ['(cities)'],
-								componentRestrictions: { country: 'pl' },
-							}}
-							onLoad={(autocomplete) => {
-								autocompleteRef.current = autocomplete;
-							}}
-							onPlaceChanged={onChosenPlace}
-						>
-							<FormInput
-								placeholder='Wpisz miasto...'
-								icon={pinIconPath}
-								{...register('city')}
-							/>
-						</Autocomplete>
-					</LoadScript>
+						<FormInput
+							placeholder='Wpisz miasto...'
+							icon={pinIconPath}
+							{...register('city')}
+						/>
+					</Autocomplete>
+
 					<input type='hidden' {...register('latitude')} />
 					<input type='hidden' {...register('longitude')} />
 					<input type='hidden' {...register('country')} />

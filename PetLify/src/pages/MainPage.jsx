@@ -8,7 +8,7 @@ import axios from 'axios';
 import useAuth from '../hooks/useAuth';
 import { useUser } from '../context/UserContext';
 import AuthForm from '../components/features/auth/AuthForm';
-import { GoogleMap, LoadScript, OverlayView } from '@react-google-maps/api';
+import { GoogleMap, OverlayView } from '@react-google-maps/api';
 import MainPageSkeleton from '../components/skeletons/MainPageSkeleton';
 const INITIAL_FILTERS = {
 	species: '',
@@ -320,138 +320,134 @@ const MainPage = () => {
 		<div className='relative bg-secondary flex lg:h-screen'>
 			<div className='lg:flex lg:w-4/10  items-center justify-center overflow-y-hidden hidden'>
 				{!selectedPetId && (
-					<LoadScript
-						googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
-					>
-						<GoogleMap
-							mapContainerStyle={{ width: '100%', height: '100%' }}
-							center={
-								selectedPosition || {
-									lat: basePin.latitude,
-									lng: basePin.longitude,
-								}
+					<GoogleMap
+						mapContainerStyle={{ width: '100%', height: '100%' }}
+						center={
+							selectedPosition || {
+								lat: basePin.latitude,
+								lng: basePin.longitude,
 							}
-							zoom={11}
-							options={{
-								mapTypeControl: false,
-								streetViewControl: false,
-								clickableIcons: false,
-								styles: [
-									{
-										elementType: 'geometry',
-										stylers: [{ color: '#1e201e' }],
-									},
+						}
+						zoom={11}
+						options={{
+							mapTypeControl: false,
+							streetViewControl: false,
+							clickableIcons: false,
+							styles: [
+								{
+									elementType: 'geometry',
+									stylers: [{ color: '#1e201e' }],
+								},
 
-									{
-										elementType: 'labels.text.fill',
-										stylers: [{ color: '#b7bdca' }],
-									},
-									{
-										elementType: 'labels.text.stroke',
-										stylers: [{ color: '#1e201e' }],
-									},
+								{
+									elementType: 'labels.text.fill',
+									stylers: [{ color: '#b7bdca' }],
+								},
+								{
+									elementType: 'labels.text.stroke',
+									stylers: [{ color: '#1e201e' }],
+								},
 
-									{
-										featureType: 'road',
-										elementType: 'geometry',
-										stylers: [{ color: '#3c3d37' }],
-									},
-									{
-										featureType: 'road',
-										elementType: 'geometry.stroke',
-										stylers: [{ color: '#272a27' }],
-									},
-									{
-										featureType: 'road',
-										elementType: 'labels.text.fill',
-										stylers: [{ color: '#b7bdca' }],
-									},
+								{
+									featureType: 'road',
+									elementType: 'geometry',
+									stylers: [{ color: '#3c3d37' }],
+								},
+								{
+									featureType: 'road',
+									elementType: 'geometry.stroke',
+									stylers: [{ color: '#272a27' }],
+								},
+								{
+									featureType: 'road',
+									elementType: 'labels.text.fill',
+									stylers: [{ color: '#b7bdca' }],
+								},
 
-									{
-										featureType: 'water',
-										elementType: 'geometry',
-										stylers: [{ color: '#272a27' }],
-									},
-									{
-										featureType: 'water',
-										elementType: 'labels.text.fill',
-										stylers: [{ color: '#767b86' }],
-									},
+								{
+									featureType: 'water',
+									elementType: 'geometry',
+									stylers: [{ color: '#272a27' }],
+								},
+								{
+									featureType: 'water',
+									elementType: 'labels.text.fill',
+									stylers: [{ color: '#767b86' }],
+								},
 
-									{
-										featureType: 'landscape',
-										elementType: 'geometry',
-										stylers: [{ color: '#242624' }],
-									},
-									{
-										featureType: 'poi.park',
-										elementType: 'geometry',
-										stylers: [{ color: '#272a27' }],
-									},
+								{
+									featureType: 'landscape',
+									elementType: 'geometry',
+									stylers: [{ color: '#242624' }],
+								},
+								{
+									featureType: 'poi.park',
+									elementType: 'geometry',
+									stylers: [{ color: '#272a27' }],
+								},
 
-									{
-										featureType: 'poi',
-										elementType: 'all',
-										stylers: [{ visibility: 'off' }],
-									},
+								{
+									featureType: 'poi',
+									elementType: 'all',
+									stylers: [{ visibility: 'off' }],
+								},
 
-									{
-										featureType: 'administrative',
-										elementType: 'geometry',
-										stylers: [{ color: '#3c3d37' }],
-									},
-									{
-										featureType: 'administrative.country',
-										elementType: 'labels.text.fill',
-										stylers: [{ color: '#b7bdca' }],
-									},
+								{
+									featureType: 'administrative',
+									elementType: 'geometry',
+									stylers: [{ color: '#3c3d37' }],
+								},
+								{
+									featureType: 'administrative.country',
+									elementType: 'labels.text.fill',
+									stylers: [{ color: '#b7bdca' }],
+								},
 
-									{
-										featureType: 'road.highway',
-										elementType: 'geometry',
-										stylers: [{ color: '#ce7f31' }],
-									},
-									{
-										featureType: 'road.highway',
-										elementType: 'geometry.stroke',
-										stylers: [{ color: '#b56e2c' }],
-									},
-								],
-							}}
-						>
-							{petsData.map((pet) => {
-								let lat, lng;
-								if (typeof pet.coordinates === 'string') {
-									const coordsStr = pet.coordinates.replace(/[()]/g, '');
-									const [latStr, lngStr] = coordsStr.split(',');
-									lat = parseFloat(latStr);
-									lng = parseFloat(lngStr);
-								} else {
-									lat = pet.coordinates.x;
-									lng = pet.coordinates.y;
-								}
+								{
+									featureType: 'road.highway',
+									elementType: 'geometry',
+									stylers: [{ color: '#ce7f31' }],
+								},
+								{
+									featureType: 'road.highway',
+									elementType: 'geometry.stroke',
+									stylers: [{ color: '#b56e2c' }],
+								},
+							],
+						}}
+					>
+						{petsData.map((pet) => {
+							let lat, lng;
+							if (typeof pet.coordinates === 'string') {
+								const coordsStr = pet.coordinates.replace(/[()]/g, '');
+								const [latStr, lngStr] = coordsStr.split(',');
+								lat = parseFloat(latStr);
+								lng = parseFloat(lngStr);
+							} else {
+								lat = pet.coordinates.x;
+								lng = pet.coordinates.y;
+							}
 
-								if (isNaN(lat) || isNaN(lng)) return null;
+							if (isNaN(lat) || isNaN(lng)) return null;
 
-								return (
-									<OverlayView
-										position={{ lat, lng }}
-										mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+							return (
+								<OverlayView
+									position={{ lat, lng }}
+									mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+								>
+									<div
+										onClick={() => handlePetInfo(pet)}
+										className='absolute -translate-x-1/2 -translate-y-full rounded-full overflow-hidden border-2 border-cta shadow-md w-[50px] h-[50px] cursor-pointer'
 									>
-										<div
-											onClick={() => handlePetInfo(pet)}
-											className='absolute -translate-x-1/2 -translate-y-full rounded-full overflow-hidden border-2 border-cta shadow-md w-[50px] h-[50px] cursor-pointer'
-										>
-											<img
-												src={pet.photo_url[0]}
-												className='w-full h-full object-cover'
-											/>
-										</div>
-									</OverlayView>
-								);
-							})}
-						</GoogleMap>
-					</LoadScript>
+										<img
+											src={pet.photo_url[0]}
+											className='w-full h-full object-cover'
+										/>
+									</div>
+								</OverlayView>
+							);
+						})}
+					</GoogleMap>
 				)}
 			</div>
 
