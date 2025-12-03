@@ -3,7 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import ImageCarousel from '../ui/ImageCarousel.jsx';
-
+import PetProfileSkeleton from '../skeletons/PetProfileSkeleton.jsx';
 const petSpeciesTypes = [
 	{ label: 'Pies', value: 'dog' },
 	{ label: 'Kot', value: 'cat' },
@@ -603,7 +603,7 @@ const PetProfiles = () => {
 		const navigate = useNavigate();
 
 		if (loading) {
-			return <p className='text-accent'>Ładowanie profili...</p>;
+			return <PetProfileSkeleton />;
 		}
 
 		return (
