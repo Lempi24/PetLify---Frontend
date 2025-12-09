@@ -15,7 +15,7 @@ const PetReportCard = ({
 			{onClose && !isClosed && (
 				<button
 					onClick={onClose}
-					className='p-4 absolute top-2 right-2 bg-negative text-white rounded-full text-sm'
+					className='p-4 absolute top-2 right-2 bg-negative text-white rounded-full text-sm pointer cursor-pointer z-10'
 				>
 					Zamknij zgłoszenie
 				</button>
