@@ -84,14 +84,10 @@ const LostForm = () => {
 	const isDuplicate = (data) => {
 		return userReports.lost.some((report) => {
 			return (
-				report.pet_species?.trim().toLowerCase() ===
-					data.petSpecies?.trim().toLowerCase() &&
-				report.pet_breed?.trim().toLowerCase() ===
-					data.petBreed?.trim().toLowerCase() &&
-				report.pet_color?.trim().toLowerCase() ===
-					data.petColor?.trim().toLowerCase() &&
-				report.pet_name?.trim().toLowerCase() ===
-					data.petName?.trim().toLowerCase() &&
+				report.pet_species?.trim().toLowerCase() === data.petSpecies?.trim().toLowerCase() &&
+				report.pet_breed?.trim().toLowerCase() === data.petBreed?.trim().toLowerCase() &&
+				report.pet_color?.trim().toLowerCase() === data.petColor?.trim().toLowerCase() &&
+				report.pet_name?.trim().toLowerCase() === data.petName?.trim().toLowerCase() &&
 				report.pet_age === data.petAge &&
 				report.pet_size === data.petSize
 			);

@@ -15,6 +15,17 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import PetInfoSkeleton from '../skeletons/PetInfoSkeleton';
 import { toast } from 'react-toastify';
+
+const translatedStatus = {
+	pending: 'Oczekiwanie',
+  	active: 'Aktywne',
+  	rejected: 'Odrzucone',
+ 	expired: 'Wygasłe',
+ 	closed: 'Zamknięte',
+  	found: 'Znaleziony',
+  	lost: 'Zaginiony',
+};
+
 // Proste pole edytowalne używane w trybie "edit"
 const EditableField = ({
 	value,
@@ -176,7 +187,7 @@ const PetInfo = ({
 			city: pet.city,
 			photo_url: pet.photo_url,
 			type: reportType,
-			status: 'pending',
+			status: pet.status || 'pending',
 		};
 		try {
 			console.log(pet);
@@ -212,8 +223,12 @@ const PetInfo = ({
 							mode={mode}
 							className='text-4xl font-bold'
 						/>
-						<span className='bg-negative p-2 rounded-2xl'>
+						<span className={`p-2 rounded-2xl ${reportType === 'lost' ? 'bg-negative' : 'bg-positive'}`}>
 							{reportType === 'lost' ? 'Zaginiony' : 'Znaleziony'}
+						</span>
+
+						<span className={`p-2 rounded-2xl bg-cta`}>
+							{translatedStatus[pet?.status] || 'Nieznany'}
 						</span>
 						<button
 							onClick={() => setSelectedPetId(null)}
