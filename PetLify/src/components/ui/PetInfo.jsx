@@ -290,16 +290,16 @@ const PetInfo = ({
 							<div className='flex gap-0 rounded-md overflow-hidden'>
 								<input
 									type='number'
-									value={pet?.pet_age_value ?? ''}
+									value={pet?.pet_age ?? ''}
 									onChange={(e) =>
-										setPet({ ...pet, pet_age_value: e.target.value })
+										setPet({ ...pet, pet_age: e.target.value })
 									}
 									className='border border-cta px-2 py-1 text-accent'
 								/>
 								<select
-									value={pet?.pet_age_unit ?? 'months'}
+									value={pet?.pet_age ?? 'months'}
 									onChange={(e) =>
-										setPet({ ...pet, pet_age_unit: e.target.value })
+										setPet({ ...pet, pet_age: e.target.value })
 									}
 									className='w-32 px-3 py-1 border border-cta rounded-r-md bg-secondary text-text'
 								>
@@ -309,7 +309,7 @@ const PetInfo = ({
 							</div>
 						) : (
 							<p className='text-accent'>
-								{pet?.pet_age_value} {pet?.pet_age_unit || ''}
+								{pet?.pet_age || ''}
 							</p>
 						)}
 					</div>
