@@ -23,6 +23,7 @@
 		"react-loading-skeleton": "^3.5.0",
 		"react-router-dom": "^7.7.1",
 		"react-toastify": "^11.0.5",
+		"serve": "^14.2.5",
 		"socket.io": "^4.8.1",
 		"socket.io-client": "^4.7.5",
 		"swiper": "^11.2.10",
