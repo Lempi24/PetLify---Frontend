@@ -226,10 +226,6 @@ const PetInfo = ({
 						<span className={`p-2 rounded-2xl ${reportType === 'lost' ? 'bg-negative' : 'bg-positive'}`}>
 							{reportType === 'lost' ? 'Zaginiony' : 'Znaleziony'}
 						</span>
-
-						<span className={`p-2 rounded-2xl bg-cta`}>
-							{translatedStatus[pet?.status] || 'Nieznany'}
-						</span>
 						<button
 							onClick={() => setSelectedPetId(null)}
 							className='absolute right-5 cursor-pointer'

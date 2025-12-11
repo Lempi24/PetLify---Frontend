@@ -17,11 +17,6 @@ const ReportsPage = () => {
 	});
 
 	const translatedStatus = {
-		pending: 'Oczekiwanie',
-		active: 'Aktywne',
-		rejected: 'Odrzucone',
-		expired: 'Wygasłe',
-		closed: 'Zamknięte',
 		found: 'Znaleziony',
 		lost: 'Zaginiony',
 	};
@@ -114,7 +109,6 @@ const ReportsPage = () => {
 											image={report.photo_url[0]}
 											petName={report.pet_name}
 											reportType={translatedStatus[report.type]}   
-											reportStatus={translatedStatus[report.status]}
 											reportDate={report.found_date?.split('T')[0]}
 											onView={() => { setSelectedPet(report); setMode('view'); }}
 											onEdit={() => { setSelectedPet(report); setMode('edit'); }}
@@ -134,8 +128,7 @@ const ReportsPage = () => {
 											key={report.id}
 											image={report.photo_url[0]}
 											petName={report.pet_name}
-											reportType={translatedStatus[report.type]}   
-											reportStatus={translatedStatus[report.status]}
+											reportType={translatedStatus[report.type]}
 											reportDate={report.found_date?.split('T')[0]}
 											onView={() => { setSelectedPet(report); setMode('view'); }}
 											onEdit={() => { setSelectedPet(report); setMode('edit'); }}
@@ -159,7 +152,6 @@ const ReportsPage = () => {
 											image={report.photo_url[0]}
 											petName={report.pet_name}
 											reportType={translatedStatus[report.type]}   
-											reportStatus={translatedStatus[report.status]}
 											reportDate={report.found_date?.split('T')[0]}
 											onView={() => { setSelectedPet(report); setMode('view'); }}
 											onEdit={() => { setSelectedPet(report); setMode('edit'); }}
@@ -182,7 +174,6 @@ const ReportsPage = () => {
 											image={report.photo_url[0]}
 											petName={report.pet_name}
 											reportType={translatedStatus[report.type]}   
-											reportStatus={translatedStatus[report.status]}
 											reportDate={report.found_date?.split('T')[0]}
 											onView={() => { setSelectedPet(report); setMode('view'); }}
 										/>
