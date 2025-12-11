@@ -30,7 +30,7 @@ const FormInput = ({
 			{type === 'select' ? (
 				<select
 					{...rest}
-					className={`text-text pl-12 pr-3 py-3 rounded-md bg-secondary border-cta border-2 w-full ${
+					className={`text-text pl-12 pr-3 py-3 rounded-md bg-secondary border-cta border-2 w-full cursor-pointer ${
 						error ? 'border-negative' : ''
 					}`}
 				>

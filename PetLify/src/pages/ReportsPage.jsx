@@ -11,6 +11,7 @@ const ReportsPage = () => {
 	const navigate = useNavigate();
 	const currentPath = location.pathname;
 	const [isBurgerOpen, setIsBurgerOpen] = useState(false);
+	const [reportToClose, setReportToClose] = useState(null);
 	const [userReportsData, setUserReportsData] = useState({
 		found: [],
 		lost: [],
@@ -39,6 +40,8 @@ const ReportsPage = () => {
 			fetchUserReports();
 		} catch (error) {
 			console.error('Error updating report status: ', error);
+		} finally {
+			setReportToClose(null);
 		}
 	};
 
@@ -132,11 +135,38 @@ const ReportsPage = () => {
 											reportDate={report.found_date?.split('T')[0]}
 											onView={() => { setSelectedPet(report); setMode('view'); }}
 											onEdit={() => { setSelectedPet(report); setMode('edit'); }}
-											onClose={report.status === 'active' ? () => markAsClosed(report.id) : undefined}
+											onClose={report.status === 'active' ? () => setReportToClose(report) : undefined}
 										/>
 									))}
 								</div>
 							</>
+						)}
+
+						{reportToClose && (
+							<div className="fixed inset-0 backdrop-blur-2xl flex items-center justify-center z-10000">
+							<div className="bg-main p-6 rounded-lg shadow-lg flex flex-col items-center gap-4 max-w-md mx-4 border-2 border-cta">
+								<p className="text-lg font-bold text-text text-center">
+								Czy na pewno chcesz zamknąć zgłoszenie {reportToClose.pet_name}?
+								</p>
+								<p className="text-sm text-center text-accent">
+								Operacja ta zmieni status zgłoszenia na „Zamknięte”.
+								</p>
+								<div className="flex gap-4">
+								<button
+									onClick={() => markAsClosed(reportToClose.id)}
+									className="bg-negative text-white px-6 py-2 rounded-lg hover:bg-cta-dark transition-colors cursor-pointer"
+								>
+									Tak, zamknij
+								</button>
+								<button
+									onClick={() => setReportToClose(null)}
+									className="px-6 py-2 rounded-lg text-text border-2 border-gray-300 hover:bg-secondary transition-colors cursor-pointer"
+								>
+									Anuluj
+								</button>
+								</div>
+							</div>
+							</div>
 						)}
 
 						{/* Odrzucone */}

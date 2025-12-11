@@ -402,7 +402,7 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
 							<select
 								value={formData.petSize}
 								onChange={(e) => handleInputChange('petSize', e.target.value)}
-								className={`w-full px-3 py-3 rounded-md bg-secondary border-2 text-text ${
+								className={`w-full px-3 py-3 rounded-md bg-secondary border-2 text-text cursor-pointer ${
 									errors.petSize ? 'border-negative' : 'border-cta'
 								}`}
 							>
@@ -433,7 +433,7 @@ const CreatePetProfile = ({ onClose, onSuccess, editPet = null }) => {
 								onChange={(e) =>
 									handleInputChange('petSpecies', e.target.value)
 								}
-								className={`w-full px-3 py-3 rounded-md bg-secondary border-2 text-text ${
+								className={`w-full px-3 py-3 rounded-md bg-secondary border-2 text-text cursor-pointer ${
 									errors.petSpecies ? 'border-negative' : 'border-cta'
 								}`}
 							>
@@ -817,7 +817,7 @@ const PetProfiles = () => {
 							</button>
 							<button
 								onClick={cancelDelete}
-								className='px-6 py-2 rounded-lg text-text border-2 border-gray-300 hover:bg-secondary transition-colors'
+								className='px-6 py-2 rounded-lg text-text border-2 border-gray-300 hover:bg-secondary transition-colors cursor-pointer'
 							>
 								Anuluj
 							</button>

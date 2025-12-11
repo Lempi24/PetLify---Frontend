@@ -658,7 +658,7 @@ const LostForm = () => {
 							</div>
 							<select
 								{...register('petAgeUnit')}
-								className='w-32 px-3 py-3 border-2 border-cta border-l-0 rounded-r-md bg-secondary text-text'
+								className='w-32 px-3 py-3 border-2 border-cta border-l-0 rounded-r-md bg-secondary text-text cursor-pointer'
 							>
 								<option value='months'>miesięcy</option>
 								<option value='years'>lat</option>
