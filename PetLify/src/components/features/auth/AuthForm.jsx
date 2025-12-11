@@ -45,6 +45,9 @@ const AuthForm = ({ popupMode, onAction }) => {
 					{
 						email: data.userMail,
 						password: data.userPassword,
+					},
+					{
+						withCredentials: true,
 					}
 				);
 				if (response.data.token && popupMode) {
