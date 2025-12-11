@@ -10,6 +10,7 @@ import { useUser } from '../context/UserContext';
 import AuthForm from '../components/features/auth/AuthForm';
 import { GoogleMap, OverlayView } from '@react-google-maps/api';
 import MainPageSkeleton from '../components/skeletons/MainPageSkeleton';
+
 const INITIAL_FILTERS = {
 	species: '',
 	breed: '',
@@ -225,7 +226,9 @@ const MainPage = () => {
 		try {
 			const { data } = await axios.get(
 				`${import.meta.env.VITE_BACKEND_URL}/main-page/fetch-pets`,
-				{ params }
+				{
+					params,
+				}
 			);
 
 			setAppliedFilters(params);
