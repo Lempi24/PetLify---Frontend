@@ -20,8 +20,31 @@ const ReportsPage = () => {
 		pending: 'Oczekiwanie',
 		active: 'Aktywne',
 		rejected: 'Odrzucone',
+		expired: 'Wygasłe',
+		closed: 'Zamknięte',
 		found: 'Znaleziony',
 		lost: 'Zaginiony',
+	};
+
+	const markAsClosed = async (reportId) => {
+		const token = localStorage.getItem('token');
+		if (!token) return;
+
+		try {
+			await axios.patch(
+				import.meta.env.VITE_BACKEND_URL + `/reports/update-status/${reportId}`,
+				{ status: 'closed' },
+				{
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				}
+			);
+
+			fetchUserReports();
+		} catch (error) {
+			console.error('Error updating report status: ', error);
+		}
 	};
 
 	const allReports = [...userReportsData.found, ...userReportsData.lost];
@@ -59,6 +82,7 @@ const ReportsPage = () => {
 	const pendingReports = allReports.filter((r) => r.status === 'pending');
 	const activeReports = allReports.filter((r) => r.status === 'active');
 	const rejectedReports = allReports.filter((r) => r.status === 'rejected');
+	const closedReports = allReports.filter((r) => r.status === 'closed');
 
 	return (
 		<div className='relative flex'>
@@ -89,16 +113,11 @@ const ReportsPage = () => {
 											key={report.id}
 											image={report.photo_url[0]}
 											petName={report.pet_name}
-											petStatus={translatedStatus[report.status]}
+											reportType={translatedStatus[report.type]}   
+											reportStatus={translatedStatus[report.status]}
 											reportDate={report.found_date?.split('T')[0]}
-											onView={() => {
-												setSelectedPet(report);
-												setMode('view');
-											}}
-											onEdit={() => {
-												setSelectedPet(report);
-												setMode('edit');
-											}}
+											onView={() => { setSelectedPet(report); setMode('view'); }}
+											onEdit={() => { setSelectedPet(report); setMode('edit'); }}
 										/>
 									))}
 								</div>
@@ -115,16 +134,12 @@ const ReportsPage = () => {
 											key={report.id}
 											image={report.photo_url[0]}
 											petName={report.pet_name}
-											petStatus={translatedStatus[report.status]}
+											reportType={translatedStatus[report.type]}   
+											reportStatus={translatedStatus[report.status]}
 											reportDate={report.found_date?.split('T')[0]}
-											onView={() => {
-												setSelectedPet(report);
-												setMode('view');
-											}}
-											onEdit={() => {
-												setSelectedPet(report);
-												setMode('edit');
-											}}
+											onView={() => { setSelectedPet(report); setMode('view'); }}
+											onEdit={() => { setSelectedPet(report); setMode('edit'); }}
+											onClose={report.status === 'active' ? () => markAsClosed(report.id) : undefined}
 										/>
 									))}
 								</div>
@@ -143,22 +158,39 @@ const ReportsPage = () => {
 											key={report.id}
 											image={report.photo_url[0]}
 											petName={report.pet_name}
-											petStatus={translatedStatus[report.status]}
+											reportType={translatedStatus[report.type]}   
+											reportStatus={translatedStatus[report.status]}
 											reportDate={report.found_date?.split('T')[0]}
-											onView={() => {
-												setSelectedPet(report);
-												setMode('view');
-											}}
-											onEdit={() => {
-												setSelectedPet(report);
-												setMode('edit');
-											}}
+											onView={() => { setSelectedPet(report); setMode('view'); }}
+											onEdit={() => { setSelectedPet(report); setMode('edit'); }}
 										/>
 									))}
 								</div>
 							</>
 						)}
-					</>
+						
+						{/* Zamknięte zgłoszenia */}
+						{closedReports.length > 0 && (
+							<>
+								<h3 className='text-xl font-semibold border-b pb-2'>
+									Zamknięte zgłoszenia
+								</h3>
+								<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-10 pr-2'>
+									{closedReports.map((report) => (
+										<PetReportCard
+											key={report.id}
+											image={report.photo_url[0]}
+											petName={report.pet_name}
+											reportType={translatedStatus[report.type]}   
+											reportStatus={translatedStatus[report.status]}
+											reportDate={report.found_date?.split('T')[0]}
+											onView={() => { setSelectedPet(report); setMode('view'); }}
+										/>
+									))}
+								</div>
+							</>
+						)}
+					</>					
 				)}
 			</div>
 			{selectedPet && (
