@@ -33,12 +33,7 @@ const PetReportCard = ({
 					<p className={`px-3 py-1 rounded-xl w-fit ${reportType === 'Zaginiony' ? 'bg-negative' : 'bg-positive'}`}>
 						{reportType}
 					</p>
-					<p className='px-3 py-1 rounded-xl w-fit bg-cta'>
-						{reportStatus}
-					</p>
 				</div>
-
-
 				<p className='text-sm sm:text-base'>Zgłoszono: {reportDate}</p>
 			</div>
 
