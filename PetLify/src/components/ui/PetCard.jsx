@@ -4,7 +4,7 @@ const PetCard = ({ pet, handlePetInfo }) => {
 			onClick={() => handlePetInfo(pet)}
 			className='bg-main flex items-center rounded-xl w-full py-1 px-3 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] cursor-pointer'
 		>
-			<div className='w-[60px] h-[60px] rounded-full overflow-hidden'>
+			<div className='w-[60px] h-[60px] rounded-full overflow-hidden shrink-0'>
 				<img
 					src={pet.photo_url[0]}
 					alt={pet.pet_name}
