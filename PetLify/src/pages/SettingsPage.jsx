@@ -22,7 +22,8 @@ const SettingsPage = () => {
 	});
 	const [defaultLocation, setDefaultLocation] = useState(null);
 	const [initialSettings, setInitialSettings] = useState(null);
-
+	const [supportsPWA, setSupportsPWA] = useState(false);
+	const [promptInstall, setPromptInstall] = useState(null);
 	const isChanged =
 		initialSettings &&
 		settings &&
@@ -141,6 +142,34 @@ const SettingsPage = () => {
 		}
 	}, [initialSettings, settings]);
 
+	useEffect(() => {
+		const handler = (e) => {
+			e.preventDefault();
+			setPromptInstall(e);
+			setSupportsPWA(true);
+		};
+		window.addEventListener('beforeinstallprompt', handler);
+		return () => window.removeEventListener('beforeinstallprompt', handler);
+	}, []);
+
+	const handleInstallClick = async (e) => {
+		if (e) e.preventDefault();
+		if (!promptInstall) {
+			console.log('Prompt nie jest dostępny');
+			return;
+		}
+
+		promptInstall.prompt();
+
+		const choiceResult = await promptInstall.userChoice;
+		if (choiceResult.outcome === 'accepted') {
+			console.log('Użytkownik zaakceptował instalację');
+			setSupportsPWA(false); // Chowamy przycisk po instalacji
+		} else {
+			console.log('Użytkownik anulował instalację');
+		}
+	};
+
 	return (
 		<div className='relative flex'>
 			<SubPagesNav currentPath={currentPath} isBurgerOpen={isBurgerOpen} />
@@ -168,7 +197,7 @@ const SettingsPage = () => {
 								onClose={() => setActivePanel(null)}
 							/>
 						)}
-						
+
 						<>
 							<SettingsButtonContainer
 								pMessage={
@@ -199,7 +228,7 @@ const SettingsPage = () => {
 						</>
 					</div>
 				</div>
-				
+
 				<div>
 					<p className='text-cta'>Powiadomienia</p>
 					<div className='mt-3 space-y-1'>
@@ -249,6 +278,15 @@ const SettingsPage = () => {
 							<SettingsPanel
 								type={'editLocation'}
 								onClose={() => setActivePanel(null)}
+							/>
+						)}
+						{supportsPWA && (
+							<SettingsButtonContainer
+								pMessage={`Pobierz aplikację na telefon!`}
+								btnMessage={'Pobierz'}
+								btnType={'button'}
+								negative={false}
+								onAction={handleInstallClick}
 							/>
 						)}
 					</div>
