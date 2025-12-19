@@ -7,8 +7,9 @@ import { useUser } from '../context/UserContext';
 import SettingsPanel from '../components/ui/SettingsPanel';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-
+import { usePWA } from '../context/PWAContext.jsx';
 const SettingsPage = () => {
+	const { supportsPWA, installPWA } = usePWA();
 	const { user } = useUser();
 	console.log('Aktualny stan obiektu user:', user);
 	const navigate = useNavigate();
@@ -22,8 +23,6 @@ const SettingsPage = () => {
 	});
 	const [defaultLocation, setDefaultLocation] = useState(null);
 	const [initialSettings, setInitialSettings] = useState(null);
-	const [supportsPWA, setSupportsPWA] = useState(false);
-	const [promptInstall, setPromptInstall] = useState(null);
 	const isChanged =
 		initialSettings &&
 		settings &&
@@ -142,33 +141,33 @@ const SettingsPage = () => {
 		}
 	}, [initialSettings, settings]);
 
-	useEffect(() => {
-		const handler = (e) => {
-			e.preventDefault();
-			setPromptInstall(e);
-			setSupportsPWA(true);
-		};
-		window.addEventListener('beforeinstallprompt', handler);
-		return () => window.removeEventListener('beforeinstallprompt', handler);
-	}, []);
+	// useEffect(() => {
+	// 	const handler = (e) => {
+	// 		e.preventDefault();
+	// 		setPromptInstall(e);
+	// 		setSupportsPWA(true);
+	// 	};
+	// 	window.addEventListener('beforeinstallprompt', handler);
+	// 	return () => window.removeEventListener('beforeinstallprompt', handler);
+	// }, []);
 
-	const handleInstallClick = async (e) => {
-		if (e) e.preventDefault();
-		if (!promptInstall) {
-			console.log('Prompt nie jest dostępny');
-			return;
-		}
+	// const handleInstallClick = async (e) => {
+	// 	if (e) e.preventDefault();
+	// 	if (!promptInstall) {
+	// 		console.log('Prompt nie jest dostępny');
+	// 		return;
+	// 	}
 
-		promptInstall.prompt();
+	// 	promptInstall.prompt();
 
-		const choiceResult = await promptInstall.userChoice;
-		if (choiceResult.outcome === 'accepted') {
-			console.log('Użytkownik zaakceptował instalację');
-			setSupportsPWA(false); // Chowamy przycisk po instalacji
-		} else {
-			console.log('Użytkownik anulował instalację');
-		}
-	};
+	// 	const choiceResult = await promptInstall.userChoice;
+	// 	if (choiceResult.outcome === 'accepted') {
+	// 		console.log('Użytkownik zaakceptował instalację');
+	// 		setSupportsPWA(false); // Chowamy przycisk po instalacji
+	// 	} else {
+	// 		console.log('Użytkownik anulował instalację');
+	// 	}
+	// };
 
 	return (
 		<div className='relative flex'>
@@ -286,7 +285,7 @@ const SettingsPage = () => {
 								btnMessage={'Pobierz'}
 								btnType={'button'}
 								negative={false}
-								onAction={handleInstallClick}
+								onAction={installPWA}
 							/>
 						)}
 					</div>
